@@ -31,6 +31,9 @@ const colorPrefsList    = document.getElementById('color-prefs-list');
 const reloadBtn         = document.getElementById('reload-btn');
 const optionsBtn        = document.getElementById('options-btn');
 const optionsPanel      = document.getElementById('options-panel');
+const reloadHint        = document.getElementById('reload-hint');
+const reloadHintBtn     = document.getElementById('reload-hint-btn');
+const lightsProgress    = document.getElementById('lights-progress');
 
 // Settings
 const mainView          = document.getElementById('main-view');
@@ -185,6 +188,7 @@ function updateActiveChip() {
   document.querySelectorAll('.toggle-switch').forEach(sw => {
     sw.style.setProperty('--toggle-active-color', activeHex);
   });
+  setLightsBtn.style.setProperty('--active-color', activeHex);
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -262,6 +266,8 @@ form.addEventListener('submit', async (e) => {
 
 // ── Reload ────────────────────────────────────────────────────────────────────
 reloadBtn.addEventListener('click', () => {
+  reloadHint.classList.add('hidden');
+  reloadBtn.classList.remove('needs-reload');
   resetButton();
   fileInput.value = '';
   fileLabelText.textContent = 'Drop an image or click to browse';
@@ -303,11 +309,18 @@ setLightsBtn.addEventListener('click', async () => {
   if (!lastPrimary) return;
   setLightsBtn.disabled = true;
   lightsStatus.classList.add('hidden');
-  const orig = setLightsBtn.textContent;
-  setLightsBtn.textContent = 'Setting…';
 
   const { r, g, b } = getLightColor();
+  const activeHex = `rgb(${r},${g},${b})`;
   const apiKey = loadApiKey();
+
+  // Start progress bar
+  lightsProgress.className = 'lights-progress';
+  lightsProgress.style.setProperty('--active-color', activeHex);
+  lightsProgress.style.width = '0';
+  // Force reflow then animate
+  lightsProgress.getBoundingClientRect();
+  lightsProgress.classList.add('running');
 
   try {
     const fd = new FormData();
@@ -316,6 +329,12 @@ setLightsBtn.addEventListener('click', async () => {
     if (apiKey) headers['X-Govee-Api-Key'] = apiKey;
     const response = await fetch('/set-light', { method: 'POST', body: fd, headers });
     const data = await response.json();
+
+    // Complete the bar
+    lightsProgress.classList.remove('running');
+    lightsProgress.classList.add('done');
+    setTimeout(() => { lightsProgress.className = 'lights-progress'; }, 600);
+
     if (!response.ok) {
       lightsStatus.textContent = data.detail || 'Failed to set lights.';
       lightsStatus.className = 'lights-status error-status';
@@ -325,12 +344,12 @@ setLightsBtn.addEventListener('click', async () => {
     }
     lightsStatus.classList.remove('hidden');
   } catch {
+    lightsProgress.className = 'lights-progress';
     lightsStatus.textContent = 'Network error.';
     lightsStatus.className = 'lights-status error-status';
     lightsStatus.classList.remove('hidden');
   } finally {
     setLightsBtn.disabled = false;
-    setLightsBtn.textContent = orig;
   }
 });
 
@@ -442,7 +461,26 @@ preferSecToggle.addEventListener('change', () => {
 
 // Skip neutrals toggle
 skipNeutralsToggle.checked = loadSkipNeutrals();
-skipNeutralsToggle.addEventListener('change', () => saveSkipNeutrals(skipNeutralsToggle.checked));
+skipNeutralsToggle.addEventListener('change', () => {
+  saveSkipNeutrals(skipNeutralsToggle.checked);
+  if (lastPrimary) {
+    const activeHex = getLightColor() ? `rgb(${getLightColor().r},${getLightColor().g},${getLightColor().b})` : null;
+    reloadHint.classList.remove('hidden');
+    reloadHintBtn.style.setProperty('color', activeHex || '');
+    reloadBtn.classList.add('needs-reload');
+    reloadBtn.style.setProperty('--active-color', activeHex || '');
+  }
+});
+
+reloadHintBtn.addEventListener('click', () => {
+  reloadHint.classList.add('hidden');
+  reloadBtn.classList.remove('needs-reload');
+  fileInput.value = '';
+  fileLabelText.textContent = 'Drop an image or click to browse';
+  dropzone.classList.remove('has-file');
+  urlInput.value = '';
+  resetButton();
+});
 
 // ── Color preferences drag list ───────────────────────────────────────────────
 function buildPrefsList() {

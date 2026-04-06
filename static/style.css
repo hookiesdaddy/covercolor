@@ -241,6 +241,38 @@ header { display: flex; align-items: center; justify-content: space-between; }
   opacity: 0;
 }
 
+/* ── Reload hint ────────────────────────────────────────────────────────────── */
+#skip-neutrals-wrap { display: flex; flex-direction: column; gap: 0; }
+.reload-hint {
+  font-size: 0.75rem; color: var(--muted);
+  padding: 0.5rem 1rem 0.6rem;
+  background: var(--input-bg);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  display: flex; align-items: center; gap: 0.35rem;
+  animation: fadeUp 0.2s ease both;
+}
+.reload-hint.hidden { display: none; }
+#skip-neutrals-wrap:has(.reload-hint:not(.hidden)) .toggle-row {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.reload-hint-btn {
+  background: none; border: none; padding: 0;
+  font-size: 0.75rem; font-weight: 600; font-family: inherit;
+  cursor: pointer;
+  color: var(--active-color, #6366f1);
+  text-decoration: underline; text-underline-offset: 2px;
+  transition: opacity 0.15s;
+}
+.reload-hint-btn:hover { opacity: 0.75; }
+
+/* reload-btn highlight when hint is active */
+#reload-btn.needs-reload {
+  color: var(--active-color, #6366f1);
+  border-color: var(--active-color, #6366f1);
+  box-shadow: 0 0 0 1px var(--active-color, #6366f1);
+}
+
 /* ── Prefs expand panel ─────────────────────────────────────────────────────── */
 .prefs-expand {
   overflow: hidden;
@@ -254,10 +286,36 @@ header { display: flex; align-items: center; justify-content: space-between; }
 }
 
 /* ── Set Lights ─────────────────────────────────────────────────────────────── */
-.set-lights-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--input-bg); color: var(--text-secondary); font-size: 0.85rem; font-weight: 500; font-family: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.set-lights-btn {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 0.7rem;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--input-bg); color: var(--text-secondary);
+  font-size: 0.85rem; font-weight: 500; font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
 .set-lights-btn:hover { background: var(--subtle); border-color: var(--border-hover); color: var(--text); }
 @media (prefers-color-scheme: light) { .set-lights-btn:hover { background: rgba(0,0,0,0.06); } }
 .set-lights-btn:disabled { color: var(--muted); cursor: not-allowed; background: transparent; }
+.set-lights-text { position: relative; z-index: 1; }
+.lights-progress {
+  position: absolute; left: 0; top: 0; height: 100%;
+  width: 0; background: var(--active-color, #6366f1);
+  opacity: 0.18; border-radius: inherit;
+  transition: none;
+  z-index: 0;
+}
+.lights-progress.running {
+  transition: width 1.8s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 85%;
+}
+.lights-progress.done {
+  transition: width 0.2s ease, opacity 0.4s ease 0.1s;
+  width: 100%;
+  opacity: 0;
+}
 
 .lights-status { font-size: 0.75rem; text-align: center; padding: 0.5rem 0.75rem; border-radius: 8px; }
 .lights-status.ok-status { color: #4ade80; background: rgba(74,222,128,0.08); }
