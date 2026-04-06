@@ -318,11 +318,30 @@ hexSecondary.addEventListener('click', () => copyHex('secondary'));
 function copyHex(key) {
   const val = key === 'primary' ? lastPrimary?.hex : lastSecondary?.hex;
   if (!val) return;
-  navigator.clipboard.writeText(val.toUpperCase()).then(() => {
+  const text = val.toUpperCase();
+  const showToast = () => {
     const toast = document.querySelector(`.copied-toast[data-for="${key}"]`);
     toast.classList.remove('hidden');
     setTimeout(() => toast.classList.add('hidden'), 1500);
-  });
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showToast).catch(() => {
+      fallbackCopy(text);
+      showToast();
+    });
+  } else {
+    fallbackCopy(text);
+    showToast();
+  }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
 }
 
 // ── Show / hide result ────────────────────────────────────────────────────────
