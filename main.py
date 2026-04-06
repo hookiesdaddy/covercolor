@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 import httpx
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -44,9 +44,15 @@ async def health():
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
-    """Simple endpoint for iOS Shortcuts / external clients. Returns just the hex color."""
-    data = await file.read()
+async def analyze(request: Request, file: Optional[UploadFile] = File(default=None)):
+    """Simple endpoint for iOS Shortcuts / external clients. Returns just the hex color.
+    Accepts multipart/form-data with a 'file' field, or raw image bytes in the body."""
+    if file is not None:
+        data = await file.read()
+    else:
+        data = await request.body()
+    if not data:
+        raise HTTPException(status_code=422, detail="No image provided")
     if len(data) > settings.max_image_size_bytes:
         raise HTTPException(status_code=413, detail="Image exceeds 10MB limit")
     result = _extract(data)
