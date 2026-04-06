@@ -44,9 +44,20 @@ async def health():
 
 
 @app.post("/analyze")
-async def analyze(request: Request, file: Optional[UploadFile] = File(default=None)):
+async def analyze(
+    request: Request,
+    file: Optional[UploadFile] = File(default=None),
+    skip_neutrals: str = Form(default='0'),
+    prefer_secondary: str = Form(default='0'),
+):
     """Simple endpoint for iOS Shortcuts / external clients. Returns just the hex color.
-    Accepts multipart/form-data with a 'file' field, or raw image bytes in the body."""
+    Accepts multipart/form-data with a 'file' field, or raw image bytes in the body.
+    Optional query params: ?skip_neutrals=1&prefer_secondary=1"""
+    # Also check query params so Shortcuts can pass settings in the URL
+    qs = dict(request.query_params)
+    use_skip = skip_neutrals in ('1', 'true', 'True') or qs.get('skip_neutrals') in ('1', 'true', 'True')
+    use_secondary = prefer_secondary in ('1', 'true', 'True') or qs.get('prefer_secondary') in ('1', 'true', 'True')
+
     if file is not None:
         data = await file.read()
     else:
@@ -55,8 +66,9 @@ async def analyze(request: Request, file: Optional[UploadFile] = File(default=No
         raise HTTPException(status_code=422, detail="No image provided")
     if len(data) > settings.max_image_size_bytes:
         raise HTTPException(status_code=413, detail="Image exceeds 10MB limit")
-    result = _extract(data)
-    return {"hex": result["hex"]}
+    result = _extract(data, skip_neutrals=use_skip)
+    hex_color = result["secondary"]["hex"] if use_secondary else result["hex"]
+    return {"hex": hex_color}
 
 
 @app.post("/extract")
