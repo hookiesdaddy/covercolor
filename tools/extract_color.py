@@ -52,7 +52,7 @@ def _vibrant_strip(img):
     return strip
 
 
-def extract_dominant_color(image_bytes: bytes) -> dict:
+def extract_dominant_color(image_bytes: bytes, skip_neutrals: bool = True) -> dict:
     """
     Accepts raw image bytes.
     Returns primary + secondary colours as hex and rgb.
@@ -84,8 +84,8 @@ def extract_dominant_color(image_bytes: bytes) -> dict:
     if img.mode != "RGB":
         img = img.convert("RGB")
 
-    # Strip neutrals before ColorThief so outlines/highlights don't dominate
-    work = _vibrant_strip(img)
+    # Optionally strip neutrals before ColorThief so outlines/highlights don't dominate
+    work = _vibrant_strip(img) if skip_neutrals else img
 
     # Encode to PNG (lossless) for ColorThief
     buf = BytesIO()

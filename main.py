@@ -22,6 +22,7 @@ GOVEE_DEVICES_URL = "https://developer-api.govee.com/v1/devices"
 
 class URLRequest(BaseModel):
     url: str
+    skip_neutrals: bool = True
 
 
 @app.get("/")
@@ -38,17 +39,18 @@ async def health():
 async def extract(
     file: Optional[UploadFile] = File(default=None),
     url: Optional[str] = Form(default=None),
+    skip_neutrals: bool = Form(default=True),
 ):
     """Extract the dominant color. Returns hex + rgb. Does NOT set lights."""
     image_bytes, source = await _get_image_bytes(file, url)
-    return {**_extract(image_bytes), "source": source}
+    return {**_extract(image_bytes, skip_neutrals=skip_neutrals), "source": source}
 
 
 @app.post("/extract/url")
 async def extract_url(body: URLRequest):
     """JSON body URL variant — convenient for Shortcuts JSON mode."""
     image_bytes, source = await _fetch_url(body.url)
-    return {**_extract(image_bytes), "source": source}
+    return {**_extract(image_bytes, skip_neutrals=body.skip_neutrals), "source": source}
 
 
 @app.post("/extract-and-set")
@@ -139,9 +141,9 @@ async def _fetch_url(url: str) -> Tuple[bytes, str]:
     return data, "url"
 
 
-def _extract(image_bytes: bytes) -> dict:
+def _extract(image_bytes: bytes, skip_neutrals: bool = True) -> dict:
     try:
-        return extract_dominant_color(image_bytes)
+        return extract_dominant_color(image_bytes, skip_neutrals=skip_neutrals)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:

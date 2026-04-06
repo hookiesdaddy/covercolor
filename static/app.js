@@ -37,7 +37,8 @@ const apiKeyToggle      = document.getElementById('api-key-toggle');
 const saveKeyBtn        = document.getElementById('save-key-btn');
 const testKeyBtn        = document.getElementById('test-key-btn');
 const keyStatus         = document.getElementById('key-status');
-const preferSecToggle   = document.getElementById('prefer-secondary-toggle');
+const preferSecToggle     = document.getElementById('prefer-secondary-toggle');
+const skipNeutralsToggle  = document.getElementById('skip-neutrals-toggle');
 const colorPrefsList    = document.getElementById('color-prefs-list');
 
 // ── Color families ────────────────────────────────────────────────────────────
@@ -59,17 +60,20 @@ let lastSecondary  = null;
 let manualOverride = null; // 'primary' | 'secondary' | null
 
 // ── LocalStorage ──────────────────────────────────────────────────────────────
-const LS_KEY        = 'colorpick_govee_key';
-const LS_PREFS      = 'colorpick_color_prefs';
-const LS_PREFER_SEC = 'colorpick_prefer_secondary';
-const LS_THEME      = 'colorpick_theme';
+const LS_KEY          = 'colorpick_govee_key';
+const LS_PREFS        = 'colorpick_color_prefs';
+const LS_PREFER_SEC   = 'colorpick_prefer_secondary';
+const LS_THEME        = 'colorpick_theme';
+const LS_SKIP_NEUTRAL = 'colorpick_skip_neutrals';
 
 const loadApiKey      = () => localStorage.getItem(LS_KEY) || '';
 const saveApiKey      = k => localStorage.setItem(LS_KEY, k);
 const loadPreferSec   = () => localStorage.getItem(LS_PREFER_SEC) === 'true';
 const savePreferSec   = v => localStorage.setItem(LS_PREFER_SEC, String(v));
-const loadTheme       = () => localStorage.getItem(LS_THEME) || 'dark';
-const saveTheme       = t => localStorage.setItem(LS_THEME, t);
+const loadTheme         = () => localStorage.getItem(LS_THEME) || 'dark';
+const saveTheme         = t => localStorage.setItem(LS_THEME, t);
+const loadSkipNeutrals  = () => localStorage.getItem(LS_SKIP_NEUTRAL) !== 'false';
+const saveSkipNeutrals  = v => localStorage.setItem(LS_SKIP_NEUTRAL, String(v));
 
 function loadPrefs() {
   try { const r = localStorage.getItem(LS_PREFS); if (r) return JSON.parse(r); } catch {}
@@ -231,10 +235,12 @@ form.addEventListener('submit', async (e) => {
     const apiKey = loadApiKey();
     if (apiKey) headers['X-Govee-Api-Key'] = apiKey;
 
+    const skipNeutrals = loadSkipNeutrals();
     if (activeMode === 'upload') {
       if (!fileInput.files[0]) { showError('Please select an image file.'); return; }
       const fd = new FormData();
       fd.append('file', fileInput.files[0]);
+      fd.append('skip_neutrals', skipNeutrals);
       response = await fetch('/extract', { method: 'POST', body: fd, headers });
     } else {
       const url = urlInput.value.trim();
@@ -242,7 +248,7 @@ form.addEventListener('submit', async (e) => {
       response = await fetch('/extract/url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, skip_neutrals: skipNeutrals }),
       });
     }
 
@@ -469,3 +475,5 @@ function persistPrefs() { savePrefs([...colorPrefsList.querySelectorAll('.pref-i
 // ── Init ──────────────────────────────────────────────────────────────────────
 applyTheme(loadTheme());
 buildPrefsList();
+skipNeutralsToggle.checked = loadSkipNeutrals();
+skipNeutralsToggle.addEventListener('change', () => saveSkipNeutrals(skipNeutralsToggle.checked));
