@@ -389,6 +389,7 @@ function showResult(data) {
 
   root.style.setProperty('--primary-color', lastPrimary.hex);
   root.style.setProperty('--secondary-color', lastSecondary.hex);
+  dropzone.style.setProperty('--dropzone-color', lastPrimary.hex);
   submitBtn.classList.add('color-revealed');
 
   hexPrimaryText.textContent   = lastPrimary.hex.toUpperCase();
@@ -406,6 +407,7 @@ function hideResult() {
   manualOverride = null;
   primaryChip.classList.remove('active');
   secondaryChip.classList.remove('active');
+  dropzone.style.removeProperty('--dropzone-color');
 }
 
 function resetButton() {
