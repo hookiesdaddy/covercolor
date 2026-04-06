@@ -19,27 +19,26 @@ const hexSecondary      = document.getElementById('hex-secondary');
 const hexSecondaryText  = document.getElementById('hex-secondary-text');
 const rgbSecondary      = document.getElementById('rgb-secondary');
 const brighterToggle    = document.getElementById('brighter-toggle');
+const preferSecToggle   = document.getElementById('prefer-secondary-toggle');
 const prefsToggle       = document.getElementById('prefs-toggle');
+const prefsExpand       = document.getElementById('prefs-expand');
+const skipNeutralsToggle= document.getElementById('skip-neutrals-toggle');
 const setLightsBtn      = document.getElementById('set-lights-btn');
 const lightsStatus      = document.getElementById('lights-status');
 const errorDiv          = document.getElementById('error');
 const logoDot           = document.getElementById('logo-dot');
-const root              = document.documentElement;
+const colorPrefsList    = document.getElementById('color-prefs-list');
 
 // Settings
 const mainView          = document.getElementById('main-view');
 const settingsView      = document.getElementById('settings-view');
 const settingsBtn       = document.getElementById('settings-btn');
 const settingsBack      = document.getElementById('settings-back');
-const themeBtn          = document.getElementById('theme-btn');
 const apiKeyInput       = document.getElementById('api-key-input');
 const apiKeyToggle      = document.getElementById('api-key-toggle');
 const saveKeyBtn        = document.getElementById('save-key-btn');
 const testKeyBtn        = document.getElementById('test-key-btn');
 const keyStatus         = document.getElementById('key-status');
-const preferSecToggle     = document.getElementById('prefer-secondary-toggle');
-const skipNeutralsToggle  = document.getElementById('skip-neutrals-toggle');
-const colorPrefsList    = document.getElementById('color-prefs-list');
 
 // ── Color families ────────────────────────────────────────────────────────────
 const DEFAULT_FAMILIES = [
@@ -63,17 +62,14 @@ let manualOverride = null; // 'primary' | 'secondary' | null
 const LS_KEY          = 'colorpick_govee_key';
 const LS_PREFS        = 'colorpick_color_prefs';
 const LS_PREFER_SEC   = 'colorpick_prefer_secondary';
-const LS_THEME        = 'colorpick_theme';
 const LS_SKIP_NEUTRAL = 'colorpick_skip_neutrals';
 
-const loadApiKey      = () => localStorage.getItem(LS_KEY) || '';
-const saveApiKey      = k => localStorage.setItem(LS_KEY, k);
-const loadPreferSec   = () => localStorage.getItem(LS_PREFER_SEC) === 'true';
-const savePreferSec   = v => localStorage.setItem(LS_PREFER_SEC, String(v));
-const loadTheme         = () => localStorage.getItem(LS_THEME) || 'dark';
-const saveTheme         = t => localStorage.setItem(LS_THEME, t);
-const loadSkipNeutrals  = () => localStorage.getItem(LS_SKIP_NEUTRAL) !== 'false';
-const saveSkipNeutrals  = v => localStorage.setItem(LS_SKIP_NEUTRAL, String(v));
+const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
+const saveApiKey       = k => localStorage.setItem(LS_KEY, k);
+const loadPreferSec    = () => localStorage.getItem(LS_PREFER_SEC) === 'true';
+const savePreferSec    = v => localStorage.setItem(LS_PREFER_SEC, String(v));
+const loadSkipNeutrals = () => localStorage.getItem(LS_SKIP_NEUTRAL) !== 'false';
+const saveSkipNeutrals = v => localStorage.setItem(LS_SKIP_NEUTRAL, String(v));
 
 function loadPrefs() {
   try { const r = localStorage.getItem(LS_PREFS); if (r) return JSON.parse(r); } catch {}
@@ -140,8 +136,6 @@ function preferredColor(primary, secondary) {
 }
 
 // ── Active color logic ────────────────────────────────────────────────────────
-// Returns true if secondary should be used for lights.
-// Priority: manual override > toggles > prefer-secondary setting > default (primary)
 function isUsingSecondary() {
   if (!lastPrimary || !lastSecondary) return false;
 
@@ -265,11 +259,14 @@ form.addEventListener('submit', async (e) => {
 
 // ── Toggle listeners ──────────────────────────────────────────────────────────
 brighterToggle.addEventListener('change', updateActiveChip);
-prefsToggle.addEventListener('change', updateActiveChip);
+prefsToggle.addEventListener('change', () => {
+  prefsExpand.classList.toggle('open', prefsToggle.checked);
+  updateActiveChip();
+});
 
 // ── Manual chip selection ─────────────────────────────────────────────────────
 primaryChip.addEventListener('click', e => {
-  if (e.target.closest('.hex-btn')) return; // let copy handler run
+  if (e.target.closest('.hex-btn')) return;
   if (!lastPrimary) return;
   manualOverride = manualOverride === 'primary' ? null : 'primary';
   updateActiveChip();
@@ -331,13 +328,9 @@ function copyHex(key) {
     setTimeout(() => toast.classList.add('hidden'), 1500);
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(showToast).catch(() => {
-      fallbackCopy(text);
-      showToast();
-    });
+    navigator.clipboard.writeText(text).then(showToast).catch(() => { fallbackCopy(text); showToast(); });
   } else {
-    fallbackCopy(text);
-    showToast();
+    fallbackCopy(text); showToast();
   }
 }
 function fallbackCopy(text) {
@@ -354,7 +347,7 @@ function fallbackCopy(text) {
 function showResult(data) {
   lastPrimary   = { hex: data.hex, rgb: data.rgb };
   lastSecondary = data.secondary ? { hex: data.secondary.hex, rgb: data.secondary.rgb } : lastPrimary;
-  manualOverride = null; // reset on every new photo
+  manualOverride = null;
 
   root.style.setProperty('--primary-color', lastPrimary.hex);
   root.style.setProperty('--secondary-color', lastSecondary.hex);
@@ -386,19 +379,7 @@ function resetButton() {
 function showError(msg) { errorDiv.textContent = msg; errorDiv.classList.remove('hidden'); }
 function hideError()    { errorDiv.classList.add('hidden'); }
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
-const MOON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>`;
-const SUN_SVG  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" /></svg>`;
-
-function applyTheme(theme) {
-  root.setAttribute('data-theme', theme);
-  themeBtn.innerHTML = theme === 'dark' ? SUN_SVG : MOON_SVG;
-  saveTheme(theme);
-}
-
-themeBtn.addEventListener('click', () => {
-  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-});
+const root = document.documentElement;
 
 // ── Settings panel ────────────────────────────────────────────────────────────
 settingsBtn.addEventListener('click', () => { mainView.classList.add('hidden'); settingsView.classList.remove('hidden'); });
@@ -440,6 +421,10 @@ preferSecToggle.addEventListener('change', () => {
   if (lastPrimary) updateActiveChip();
 });
 
+// Skip neutrals toggle
+skipNeutralsToggle.checked = loadSkipNeutrals();
+skipNeutralsToggle.addEventListener('change', () => saveSkipNeutrals(skipNeutralsToggle.checked));
+
 // ── Color preferences drag list ───────────────────────────────────────────────
 function buildPrefsList() {
   const families = getOrderedFamilies();
@@ -473,7 +458,4 @@ function updateRanks() { colorPrefsList.querySelectorAll('.pref-item').forEach((
 function persistPrefs() { savePrefs([...colorPrefsList.querySelectorAll('.pref-item')].map(i => i.dataset.name)); }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-applyTheme(loadTheme());
 buildPrefsList();
-skipNeutralsToggle.checked = loadSkipNeutrals();
-skipNeutralsToggle.addEventListener('change', () => saveSkipNeutrals(skipNeutralsToggle.checked));

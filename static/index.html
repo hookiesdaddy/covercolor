@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=11" />
+  <link rel="stylesheet" href="/static/style.css?v=12" />
 </head>
 <body>
   <div class="bg-orbs">
@@ -25,9 +25,6 @@
           colorpick
         </div>
         <div class="header-actions">
-          <button class="icon-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
-            <!-- icon injected by JS -->
-          </button>
           <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
@@ -112,6 +109,38 @@
         <label class="toggle-row">
           <span class="toggle-label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+            </svg>
+            Prefer secondary color
+          </span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="prefer-secondary-toggle" />
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+
+        <button id="set-lights-btn" class="set-lights-btn">Set Lights</button>
+        <div id="lights-status" class="lights-status hidden"></div>
+      </div>
+
+      <!-- Always-visible bottom toggles -->
+      <div class="bottom-toggles">
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+            </svg>
+            Skip dark &amp; grey tones
+          </span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="skip-neutrals-toggle" checked />
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
             Use color preferences
@@ -122,8 +151,9 @@
           </div>
         </label>
 
-        <button id="set-lights-btn" class="set-lights-btn">Set Lights</button>
-        <div id="lights-status" class="lights-status hidden"></div>
+        <div id="prefs-expand" class="prefs-expand">
+          <ul id="color-prefs-list" class="color-prefs-list"></ul>
+        </div>
       </div>
 
       <div id="error" class="error hidden"></div>
@@ -159,48 +189,10 @@
         </div>
         <div id="key-status" class="key-status hidden"></div>
       </section>
-
-      <!-- Color behavior -->
-      <section class="settings-section">
-        <h3 class="section-title">Color Behavior</h3>
-        <label class="toggle-row">
-          <span class="toggle-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-            </svg>
-            Prefer secondary color
-          </span>
-          <div class="toggle-switch">
-            <input type="checkbox" id="prefer-secondary-toggle" />
-            <span class="toggle-slider"></span>
-          </div>
-        </label>
-        <p class="section-desc" style="margin-top:-0.25rem">Start with secondary as the default after each extraction. Toggles and manual selection still apply on top.</p>
-        <label class="toggle-row" style="margin-top:0.75rem">
-          <span class="toggle-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-            </svg>
-            Skip dark &amp; grey tones
-          </span>
-          <div class="toggle-switch">
-            <input type="checkbox" id="skip-neutrals-toggle" checked />
-            <span class="toggle-slider"></span>
-          </div>
-        </label>
-        <p class="section-desc" style="margin-top:-0.25rem">Filter out black, white, and grey pixels before extraction. Useful for illustrated images with heavy outlines. Turn off for photos where dark tones matter.</p>
-      </section>
-
-      <!-- Color preferences -->
-      <section class="settings-section">
-        <h3 class="section-title">Color Preferences</h3>
-        <p class="section-desc">When both colors are vibrant, the top-ranked matching family is used for lights. Drag to reorder.</p>
-        <ul id="color-prefs-list" class="color-prefs-list"></ul>
-      </section>
     </div>
 
   </div>
 
-  <script src="/static/app.js?v=11"></script>
+  <script src="/static/app.js?v=12"></script>
 </body>
 </html>
