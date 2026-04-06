@@ -28,7 +28,10 @@ const lightsStatus      = document.getElementById('lights-status');
 const errorDiv          = document.getElementById('error');
 const logoDot           = document.getElementById('logo-dot');
 const colorPrefsList    = document.getElementById('color-prefs-list');
+const bgOrb1            = document.querySelector('.orb-1');
+const bgOrb2            = document.querySelector('.orb-2');
 const reloadBtn         = document.getElementById('reload-btn');
+const clearBtn          = document.getElementById('clear-btn');
 const optionsBtn        = document.getElementById('options-btn');
 const optionsPanel      = document.getElementById('options-panel');
 const reloadHint        = document.getElementById('reload-hint');
@@ -207,8 +210,9 @@ tabs.forEach(tab => {
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) { fileLabelText.textContent = fileInput.files[0].name; dropzone.classList.add('has-file'); }
   resetButton();
+  updateClearBtn();
 });
-urlInput.addEventListener('input', resetButton);
+urlInput.addEventListener('input', () => { resetButton(); updateClearBtn(); });
 
 ['dragenter','dragover'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragging'); }));
 ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragging'); }));
@@ -219,6 +223,7 @@ dropzone.addEventListener('drop', e => {
     fileLabelText.textContent = file.name;
     dropzone.classList.add('has-file');
     resetButton();
+    updateClearBtn();
   }
 });
 
@@ -264,8 +269,17 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// ── Reload ────────────────────────────────────────────────────────────────────
+// ── Reload / Clear ────────────────────────────────────────────────────────────
 reloadBtn.addEventListener('click', () => {
+  reloadHint.classList.add('hidden');
+  reloadBtn.classList.remove('needs-reload');
+  submitBtn.classList.remove('color-revealed');
+  btnText.textContent = 'Extract Color';
+  hideResult(); hideError();
+  form.requestSubmit();
+});
+
+clearBtn.addEventListener('click', () => {
   reloadHint.classList.add('hidden');
   reloadBtn.classList.remove('needs-reload');
   resetButton();
@@ -273,7 +287,13 @@ reloadBtn.addEventListener('click', () => {
   fileLabelText.textContent = 'Drop an image or click to browse';
   dropzone.classList.remove('has-file');
   urlInput.value = '';
+  updateClearBtn();
 });
+
+function updateClearBtn() {
+  const hasContent = dropzone.classList.contains('has-file') || urlInput.value.trim() || lastPrimary;
+  clearBtn.style.display = hasContent ? '' : 'none';
+}
 
 // ── Options panel ─────────────────────────────────────────────────────────────
 optionsBtn.addEventListener('click', () => {
@@ -390,6 +410,8 @@ function showResult(data) {
   root.style.setProperty('--primary-color', lastPrimary.hex);
   root.style.setProperty('--secondary-color', lastSecondary.hex);
   dropzone.style.setProperty('--dropzone-color', lastPrimary.hex);
+  bgOrb1.style.background = `radial-gradient(circle, ${lastPrimary.hex}, transparent 70%)`;
+  bgOrb2.style.background = `radial-gradient(circle, ${lastSecondary.hex}, transparent 70%)`;
   submitBtn.classList.add('color-revealed');
 
   hexPrimaryText.textContent   = lastPrimary.hex.toUpperCase();
@@ -398,7 +420,7 @@ function showResult(data) {
   rgbSecondary.textContent     = `${lastSecondary.rgb.r}, ${lastSecondary.rgb.g}, ${lastSecondary.rgb.b}`;
 
   lightsStatus.classList.add('hidden');
-  setTimeout(() => { result.classList.remove('hidden'); updateActiveChip(); }, 350);
+  setTimeout(() => { result.classList.remove('hidden'); updateActiveChip(); updateClearBtn(); }, 350);
 }
 
 function hideResult() {
@@ -408,6 +430,8 @@ function hideResult() {
   primaryChip.classList.remove('active');
   secondaryChip.classList.remove('active');
   dropzone.style.removeProperty('--dropzone-color');
+  bgOrb1.style.removeProperty('background');
+  bgOrb2.style.removeProperty('background');
 }
 
 function resetButton() {
@@ -475,13 +499,7 @@ skipNeutralsToggle.addEventListener('change', () => {
 });
 
 reloadHintBtn.addEventListener('click', () => {
-  reloadHint.classList.add('hidden');
-  reloadBtn.classList.remove('needs-reload');
-  fileInput.value = '';
-  fileLabelText.textContent = 'Drop an image or click to browse';
-  dropzone.classList.remove('has-file');
-  urlInput.value = '';
-  resetButton();
+  reloadBtn.click();
 });
 
 // ── Color preferences drag list ───────────────────────────────────────────────

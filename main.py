@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 import httpx
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -12,6 +13,13 @@ from config import settings
 from tools.extract_color import extract_dominant_color
 
 app = FastAPI(title="colorpick", version=settings.version)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 STATIC_DIR = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -33,6 +41,16 @@ async def index():
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": settings.version}
+
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    """Simple endpoint for iOS Shortcuts / external clients. Returns just the hex color."""
+    data = await file.read()
+    if len(data) > settings.max_image_size_bytes:
+        raise HTTPException(status_code=413, detail="Image exceeds 10MB limit")
+    result = _extract(data)
+    return {"hex": result["hex"]}
 
 
 @app.post("/extract")
