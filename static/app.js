@@ -74,7 +74,7 @@ const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
 const saveApiKey       = k => localStorage.setItem(LS_KEY, k);
 const loadPreferSec    = () => localStorage.getItem(LS_PREFER_SEC) === 'true';
 const savePreferSec    = v => localStorage.setItem(LS_PREFER_SEC, String(v));
-const loadSkipNeutrals = () => localStorage.getItem(LS_SKIP_NEUTRAL) !== 'false';
+const loadSkipNeutrals = () => localStorage.getItem(LS_SKIP_NEUTRAL) === 'true';
 const saveSkipNeutrals = v => localStorage.setItem(LS_SKIP_NEUTRAL, String(v));
 
 function loadPrefs() {

@@ -22,7 +22,7 @@ GOVEE_DEVICES_URL = "https://developer-api.govee.com/v1/devices"
 
 class URLRequest(BaseModel):
     url: str
-    skip_neutrals: bool = True
+    skip_neutrals: bool = False
 
 
 @app.get("/")
@@ -39,11 +39,11 @@ async def health():
 async def extract(
     file: Optional[UploadFile] = File(default=None),
     url: Optional[str] = Form(default=None),
-    skip_neutrals: str = Form(default='1'),
+    skip_neutrals: str = Form(default='0'),
 ):
     """Extract the dominant color. Returns hex + rgb. Does NOT set lights."""
     image_bytes, source = await _get_image_bytes(file, url)
-    return {**_extract(image_bytes, skip_neutrals=skip_neutrals not in ('0', 'false', 'False')), "source": source}
+    return {**_extract(image_bytes, skip_neutrals=skip_neutrals in ('1', 'true', 'True')), "source": source}
 
 
 @app.post("/extract/url")
