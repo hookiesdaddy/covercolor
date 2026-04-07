@@ -66,6 +66,9 @@ const npSyncLabel       = document.getElementById('np-sync-label');
 const uploadSheet       = document.getElementById('upload-sheet');
 const uploadSheetBtn    = document.getElementById('upload-sheet-btn');
 const sheetCloseBtn     = document.getElementById('sheet-close-btn');
+const extractBtn        = document.getElementById('extract-btn');
+const autoBtn           = document.getElementById('auto-btn');
+const colorGradientBox  = document.getElementById('color-gradient-box');
 
 // ── Color families ────────────────────────────────────────────────────────────
 const DEFAULT_FAMILIES = [
@@ -608,6 +611,8 @@ function updateMusicUI() {
   noService.classList.toggle('hidden', hasCredentials || syncOn);
   npHero.classList.toggle('hidden', !syncOn);
   reloadBtn.style.display = syncOn ? 'none' : '';
+  autoBtn.classList.toggle('active', syncOn);
+  autoBtn.title = syncOn ? 'Auto-sync ON — click to disable' : 'Auto-sync OFF — click to enable';
 }
 
 function openUploadSheet() {
@@ -714,6 +719,25 @@ connectPromptBtn.addEventListener('click', () => {
 
 uploadSheetBtn.addEventListener('click', openUploadSheet);
 sheetCloseBtn.addEventListener('click', closeUploadSheet);
+
+// Extract: re-run on current track art if sync on, else open upload sheet
+extractBtn.addEventListener('click', async () => {
+  const syncOn = localStorage.getItem(LS_LFM_SYNC) === 'true';
+  if (!syncOn || !lfmLastTrackKey) { openUploadSheet(); return; }
+  // Force re-extraction by resetting the last track key then polling immediately
+  lfmLastTrackKey = null;
+  await lfmPoll();
+});
+
+// Auto: toggle sync on/off
+autoBtn.addEventListener('click', () => {
+  const syncOn = localStorage.getItem(LS_LFM_SYNC) === 'true';
+  const newVal = !syncOn;
+  localStorage.setItem(LS_LFM_SYNC, String(newVal));
+  lfmSyncToggle.checked = newVal;
+  newVal ? startLfmSync() : stopLfmSync();
+  updateMusicUI();
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildPrefsList();

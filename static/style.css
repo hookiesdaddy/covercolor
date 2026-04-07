@@ -162,6 +162,9 @@ header { display: flex; align-items: center; justify-content: space-between; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .result.hidden { display: none; }
 
+/* ── Color gradient box ──────────────────────────────────────────────────────── */
+.color-gradient-box { width: 100%; height: 110px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--secondary-color, #ec4899)); transition: background 0.6s ease; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+
 /* ── Color chips ────────────────────────────────────────────────────────────── */
 .color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
@@ -213,6 +216,9 @@ header { display: flex; align-items: center; justify-content: space-between; }
   align-items: center;
   gap: 0.5rem;
 }
+.ctrl-btn { height: 36px; padding: 0 0.85rem; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-secondary); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; white-space: nowrap; }
+.ctrl-btn:hover { background: var(--subtle); color: var(--text); }
+.ctrl-btn.active { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #a5b4fc; }
 
 .options-btn {
   flex: 1;
