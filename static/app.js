@@ -588,9 +588,9 @@ async function lfmGetNowPlaying(user, key) {
   const tracks = data.recenttracks?.track;
   if (!tracks || !tracks.length) return null;
   const track = Array.isArray(tracks) ? tracks[0] : tracks;
-  if (!track['@attr']?.nowplaying) return null;
+  const isLive = !!track['@attr']?.nowplaying;
   const art = track.image?.find(i => i.size === 'extralarge')?.['#text'] || '';
-  return { title: track.name, artist: track.artist['#text'], art };
+  return { title: track.name, artist: track.artist['#text'], art, isLive };
 }
 
 async function lfmPoll() {
@@ -601,7 +601,13 @@ async function lfmPoll() {
     const track = await lfmGetNowPlaying(user, key);
     if (!track || !track.art) {
       nowPlaying.classList.remove('syncing');
-      npText.textContent = 'Nothing playing';
+      npText.textContent = 'No scrobbles found — is your scrobbler running?';
+      nowPlaying.classList.remove('hidden');
+      return;
+    }
+    if (!track.isLive) {
+      nowPlaying.classList.remove('syncing');
+      npText.textContent = `Last played: ${track.artist} — ${track.title}`;
       nowPlaying.classList.remove('hidden');
       return;
     }
