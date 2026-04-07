@@ -49,6 +49,16 @@ const saveKeyBtn        = document.getElementById('save-key-btn');
 const testKeyBtn        = document.getElementById('test-key-btn');
 const keyStatus         = document.getElementById('key-status');
 
+// Last.fm
+const lfmUserInput      = document.getElementById('lfm-user-input');
+const lfmKeyInput       = document.getElementById('lfm-key-input');
+const lfmSaveBtn        = document.getElementById('lfm-save-btn');
+const lfmTestBtn        = document.getElementById('lfm-test-btn');
+const lfmStatus         = document.getElementById('lfm-status');
+const lfmSyncToggle     = document.getElementById('lfm-sync-toggle');
+const nowPlaying        = document.getElementById('now-playing');
+const npText            = document.getElementById('np-text');
+
 // ── Color families ────────────────────────────────────────────────────────────
 const DEFAULT_FAMILIES = [
   { name: 'Red',    hue: 0,   color: '#ef4444' },
@@ -72,6 +82,9 @@ const LS_KEY          = 'colorpick_govee_key';
 const LS_PREFS        = 'colorpick_color_prefs';
 const LS_PREFER_SEC   = 'colorpick_prefer_secondary';
 const LS_SKIP_NEUTRAL = 'colorpick_skip_neutrals';
+const LS_LFM_USER     = 'colorpick_lfm_user';
+const LS_LFM_KEY      = 'colorpick_lfm_key';
+const LS_LFM_SYNC     = 'colorpick_lfm_sync';
 
 const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
 const saveApiKey       = k => localStorage.setItem(LS_KEY, k);
@@ -534,5 +547,126 @@ function initDrag() {
 function updateRanks() { colorPrefsList.querySelectorAll('.pref-item').forEach((item, idx) => { item.querySelector('.pref-rank').textContent = `#${idx + 1}`; }); }
 function persistPrefs() { savePrefs([...colorPrefsList.querySelectorAll('.pref-item')].map(i => i.dataset.name)); }
 
+// ── Last.fm integration ───────────────────────────────────────────────────────
+let lfmPollTimer    = null;
+let lfmLastTrackKey = null; // "Artist - Title" of last synced track
+
+lfmUserInput.value      = localStorage.getItem(LS_LFM_USER) || '';
+lfmKeyInput.value       = localStorage.getItem(LS_LFM_KEY)  || '';
+lfmSyncToggle.checked   = localStorage.getItem(LS_LFM_SYNC) === 'true';
+
+lfmSaveBtn.addEventListener('click', () => {
+  localStorage.setItem(LS_LFM_USER, lfmUserInput.value.trim());
+  localStorage.setItem(LS_LFM_KEY,  lfmKeyInput.value.trim());
+  showLfmStatus('ok', 'Saved.');
+});
+
+lfmTestBtn.addEventListener('click', async () => {
+  const user = lfmUserInput.value.trim();
+  const key  = lfmKeyInput.value.trim();
+  if (!user || !key) { showLfmStatus('error', 'Enter username and API key first.'); return; }
+  lfmTestBtn.disabled = true; lfmTestBtn.textContent = 'Testing…';
+  try {
+    const track = await lfmGetNowPlaying(user, key);
+    if (track) showLfmStatus('ok', `Connected! Now playing: ${track.artist} — ${track.title}`);
+    else        showLfmStatus('ok', 'Connected! No track currently playing.');
+  } catch (e) { showLfmStatus('error', e.message || 'Failed.'); }
+  finally { lfmTestBtn.disabled = false; lfmTestBtn.textContent = 'Test'; }
+});
+
+lfmSyncToggle.addEventListener('change', () => {
+  localStorage.setItem(LS_LFM_SYNC, String(lfmSyncToggle.checked));
+  lfmSyncToggle.checked ? startLfmSync() : stopLfmSync();
+});
+
+async function lfmGetNowPlaying(user, key) {
+  const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${encodeURIComponent(user)}&api_key=${encodeURIComponent(key)}&format=json&limit=1`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Last.fm error (${resp.status})`);
+  const data = await resp.json();
+  if (data.error) throw new Error(data.message || 'Last.fm error');
+  const tracks = data.recenttracks?.track;
+  if (!tracks || !tracks.length) return null;
+  const track = Array.isArray(tracks) ? tracks[0] : tracks;
+  if (!track['@attr']?.nowplaying) return null;
+  const art = track.image?.find(i => i.size === 'extralarge')?.['#text'] || '';
+  return { title: track.name, artist: track.artist['#text'], art };
+}
+
+async function lfmPoll() {
+  const user = localStorage.getItem(LS_LFM_USER) || '';
+  const key  = localStorage.getItem(LS_LFM_KEY)  || '';
+  if (!user || !key) return;
+  try {
+    const track = await lfmGetNowPlaying(user, key);
+    if (!track || !track.art) {
+      nowPlaying.classList.remove('syncing');
+      npText.textContent = 'Nothing playing';
+      nowPlaying.classList.remove('hidden');
+      return;
+    }
+    const trackKey = `${track.artist} — ${track.title}`;
+    npText.textContent = trackKey;
+    nowPlaying.classList.remove('hidden');
+
+    if (trackKey !== lfmLastTrackKey) {
+      lfmLastTrackKey = trackKey;
+      nowPlaying.classList.remove('syncing');
+      // Extract color from album art URL then set lights
+      try {
+        const headers = {};
+        const apiKey = loadApiKey();
+        if (apiKey) headers['X-Govee-Api-Key'] = apiKey;
+        const skipNeutrals = loadSkipNeutrals();
+        const analyzeResp = await fetch(`/extract/url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify({ url: track.art, skip_neutrals: skipNeutrals }),
+        });
+        if (!analyzeResp.ok) return;
+        const colorData = await analyzeResp.json();
+        // Show result in the UI
+        showResult(colorData);
+        // Set lights
+        const useSecondary = loadPreferSec();
+        const rgb = useSecondary && colorData.secondary ? colorData.secondary.rgb : colorData.rgb;
+        const hexColor = useSecondary && colorData.secondary ? colorData.secondary.hex : colorData.hex;
+        await fetch('/set-light-hex', {
+          method: 'POST',
+          headers,
+          body: (() => { const fd = new FormData(); fd.append('hex', hexColor); return fd; })(),
+        });
+        nowPlaying.classList.add('syncing');
+      } catch {}
+    } else {
+      nowPlaying.classList.add('syncing');
+    }
+  } catch (e) {
+    nowPlaying.classList.remove('hidden');
+    nowPlaying.classList.remove('syncing');
+    npText.textContent = 'Last.fm error — check credentials';
+  }
+}
+
+function startLfmSync() {
+  if (lfmPollTimer) return;
+  lfmPoll();
+  lfmPollTimer = setInterval(lfmPoll, 10000);
+  nowPlaying.classList.remove('hidden');
+}
+
+function stopLfmSync() {
+  clearInterval(lfmPollTimer);
+  lfmPollTimer = null;
+  lfmLastTrackKey = null;
+  nowPlaying.classList.add('hidden');
+}
+
+function showLfmStatus(type, msg) {
+  lfmStatus.textContent = msg;
+  lfmStatus.className = `key-status ${type}`;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildPrefsList();
+if (localStorage.getItem(LS_LFM_SYNC) === 'true') startLfmSync();

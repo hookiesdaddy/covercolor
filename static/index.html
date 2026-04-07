@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=24" />
+  <link rel="stylesheet" href="/static/style.css?v=25" />
 </head>
 <body>
   <div class="bg-orbs">
@@ -189,6 +189,12 @@
       </div>
 
       <div id="error" class="error hidden"></div>
+
+      <!-- Now playing strip -->
+      <div id="now-playing" class="now-playing hidden">
+        <span class="np-dot"></span>
+        <span id="np-text" class="np-text">—</span>
+      </div>
     </div>
 
     <!-- ── Settings view ── -->
@@ -220,10 +226,35 @@
         </div>
         <div id="key-status" class="key-status hidden"></div>
       </section>
+
+      <section class="settings-section" style="margin-top:1.5rem">
+        <h3 class="section-title">Music Integration</h3>
+        <p class="section-desc">Connect Last.fm to auto-sync your lights with Apple Music. Get a free API key at <span style="color:var(--text)">last.fm/api</span></p>
+
+        <div class="api-key-row">
+          <input type="text" id="lfm-user-input" class="api-key-input" placeholder="Last.fm username" autocomplete="off" />
+        </div>
+        <div class="api-key-row">
+          <input type="text" id="lfm-key-input" class="api-key-input" placeholder="Last.fm API key" autocomplete="off" />
+        </div>
+        <div class="api-btn-row">
+          <button id="lfm-save-btn" class="action-btn primary-btn">Save</button>
+          <button id="lfm-test-btn" class="action-btn">Test</button>
+        </div>
+        <div id="lfm-status" class="key-status hidden"></div>
+
+        <label class="toggle-row" style="margin-top:0.25rem">
+          <span class="toggle-label">Auto-sync lights with music</span>
+          <span class="toggle-switch">
+            <input type="checkbox" id="lfm-sync-toggle" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </span>
+        </label>
+      </section>
     </div>
 
   </div>
 
-  <script src="/static/app.js?v=19"></script>
+  <script src="/static/app.js?v=20"></script>
 </body>
 </html>
