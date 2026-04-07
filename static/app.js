@@ -423,7 +423,7 @@ function fallbackCopy(text) {
 }
 
 // ── Show / hide result ────────────────────────────────────────────────────────
-function showResult(data) {
+function showResult(data, { fromSync = false } = {}) {
   lastPrimary   = { hex: data.hex, rgb: data.rgb };
   lastSecondary = data.secondary ? { hex: data.secondary.hex, rgb: data.secondary.rgb } : lastPrimary;
   manualOverride = null;
@@ -433,7 +433,7 @@ function showResult(data) {
   dropzone.style.setProperty('--dropzone-color', lastPrimary.hex);
   bgOrb1.style.background = `radial-gradient(circle, ${lastPrimary.hex}, transparent 70%)`;
   bgOrb2.style.background = `radial-gradient(circle, ${lastSecondary.hex}, transparent 70%)`;
-  submitBtn.classList.add('color-revealed');
+  if (!fromSync) submitBtn.classList.add('color-revealed');
 
   hexPrimaryText.textContent   = lastPrimary.hex.toUpperCase();
   rgbPrimary.textContent       = `${data.rgb.r}, ${data.rgb.g}, ${data.rgb.b}`;
@@ -657,24 +657,27 @@ async function lfmPoll() {
         const apiKey = loadApiKey();
         if (apiKey) headers['X-Govee-Api-Key'] = apiKey;
         const skipNeutrals = loadSkipNeutrals();
-        const analyzeResp = await fetch('/extract/url', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...headers },
-          body: JSON.stringify({ url: track.art, skip_neutrals: skipNeutrals }),
-        });
-        if (!analyzeResp.ok) return;
+
+        // Fetch art in the browser to avoid server-side URL access issues
+        const artResp = await fetch(track.art);
+        const artBlob = await artResp.blob();
+        const fd = new FormData();
+        fd.append('file', artBlob, 'art.jpg');
+        fd.append('skip_neutrals', skipNeutrals ? '1' : '0');
+        const analyzeResp = await fetch('/extract', { method: 'POST', body: fd, headers });
+        if (!analyzeResp.ok) { npSyncLabel.textContent = 'Extraction failed'; return; }
         const colorData = await analyzeResp.json();
-        showResult(colorData);
+        showResult(colorData, { fromSync: true });
         const useSecondary = loadPreferSec();
         const hexColor = useSecondary && colorData.secondary ? colorData.secondary.hex : colorData.hex;
         await fetch('/set-light-hex', {
           method: 'POST',
           headers,
-          body: (() => { const fd = new FormData(); fd.append('hex', hexColor); return fd; })(),
+          body: (() => { const fd2 = new FormData(); fd2.append('hex', hexColor); return fd2; })(),
         });
         npHero.classList.add('syncing');
         npSyncLabel.textContent = 'Synced ✓';
-      } catch { npSyncLabel.textContent = 'Sync failed'; }
+      } catch (e) { npSyncLabel.textContent = 'Sync failed'; }
     } else {
       npHero.classList.add('syncing');
       npSyncLabel.textContent = 'Synced ✓';
