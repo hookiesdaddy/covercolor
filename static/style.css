@@ -431,15 +431,19 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 }
 .service-card:hover { border-color: var(--border-hover); color: var(--text); }
 .service-card.active {
-  border-color: var(--service-color);
-  background: color-mix(in srgb, var(--service-color) 10%, transparent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--text);
 }
 .service-name { font-size: 0.72rem; font-weight: 600; }
 .service-badge {
-  position: absolute; top: 6px; right: 8px;
-  font-size: 0.62rem; font-weight: 700;
-  color: #22c55e;
+  position: absolute; bottom: 0; left: 0; right: 0;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--accent);
+  border-radius: 0 0 calc(var(--radius-sm) - 1.5px) calc(var(--radius-sm) - 1.5px);
+  padding: 0.22rem 0;
+  text-align: center;
 }
 .service-badge.hidden { display: none; }
 .service-config { display: flex; flex-direction: column; gap: 0.6rem; padding-top: 0.25rem; }
