@@ -151,6 +151,7 @@ const LS_SPOTIFY_TOKEN      = 'colorpick_spotify_token';
 const LS_SPOTIFY_REFRESH    = 'colorpick_spotify_refresh';
 const LS_SPOTIFY_EXPIRES    = 'colorpick_spotify_expires';
 const LS_SPOTIFY_PLAYBACK   = 'colorpick_spotify_playback';
+const LS_ACTIVE_SERVICE     = 'colorpick_active_service'; // 'lastfm' | 'spotify'
 const HISTORY_MAX       = 30;
 
 const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
@@ -934,8 +935,9 @@ function closeUploadSheet() {
 }
 
 async function lfmPoll() {
-  // Try Spotify first if connected
-  if (localStorage.getItem(LS_SPOTIFY_TOKEN)) {
+  const activeService = localStorage.getItem(LS_ACTIVE_SERVICE) || 'lastfm';
+  // Use Spotify only if it's the selected service and connected
+  if (activeService === 'spotify' && localStorage.getItem(LS_SPOTIFY_TOKEN)) {
     try {
       const track = await spotifyGetNowPlaying();
       if (track) {
@@ -1074,6 +1076,7 @@ function updateServiceCards() {
 
 function selectService(service) {
   const isLastfm = service === 'lastfm';
+  localStorage.setItem(LS_ACTIVE_SERVICE, service);
   serviceLastfmBtn.classList.toggle('active', isLastfm);
   serviceSpotifyBtn.classList.toggle('active', !isLastfm);
   lastfmConfig.classList.toggle('hidden', !isLastfm);
@@ -1230,13 +1233,15 @@ async function spotifyFetchPlaybackState() {
   setPlaybackIcon(data?.is_playing ?? false);
 }
 
-playbackPrev.addEventListener('click', async () => {
-  await spotifyPlayerAction('previous');
-});
+async function skipAndRefresh(direction) {
+  await spotifyPlayerAction(direction);
+  // Wait for Spotify to update then force a fresh poll + re-extract
+  lfmLastTrackKey = null;
+  setTimeout(lfmPoll, 1200);
+}
 
-playbackNext.addEventListener('click', async () => {
-  await spotifyPlayerAction('next');
-});
+playbackPrev.addEventListener('click', () => skipAndRefresh('previous'));
+playbackNext.addEventListener('click', () => skipAndRefresh('next'));
 
 playbackToggleBtn.addEventListener('click', async () => {
   const token = await getSpotifyToken();
@@ -1343,6 +1348,9 @@ buildPrefsList();
 updateServiceCards();
 updateSpotifyUI();
 updatePlaybackControls();
+// Restore active service card
+const _savedService = localStorage.getItem(LS_ACTIVE_SERVICE);
+if (_savedService) selectService(_savedService);
 updateMusicUI();
 
 // Handle Spotify OAuth callback
