@@ -25,7 +25,8 @@ def _is_neutral(r, g, b):
 def _extract_raw(img):
     """
     Top 2 colors by raw pixel count using PIL quantization.
-    No filtering — black, white, grey all treated equally.
+    Primary is always the most frequent color.
+    Secondary avoids being dark/neutral if any non-dark option exists in the palette.
     """
     q = img.quantize(colors=32, method=Image.Quantize.MEDIANCUT)
     counts = q.getcolors()          # [(count, palette_index), ...]
@@ -37,8 +38,21 @@ def _extract_raw(img):
     def to_rgb(idx):
         return (pal[idx * 3], pal[idx * 3 + 1], pal[idx * 3 + 2])
 
-    primary   = to_rgb(counts[0][1])
-    secondary = to_rgb(counts[1][1]) if len(counts) > 1 else primary
+    all_colors = [to_rgb(c[1]) for c in counts]
+    primary = all_colors[0]
+
+    if len(all_colors) < 2:
+        return primary, primary
+
+    # If primary is dark/neutral, try to find a non-dark secondary
+    # If primary is vibrant, still prefer a non-dark secondary
+    non_dark = [c for c in all_colors[1:] if not _is_neutral(*c)]
+    if non_dark:
+        secondary = non_dark[0]
+    else:
+        # All options are dark/neutral — just take the next most frequent
+        secondary = all_colors[1]
+
     return primary, secondary
 
 
