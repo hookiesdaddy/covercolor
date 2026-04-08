@@ -547,6 +547,8 @@ function showResult(data, { fromSync = false, name = null, size = null, skipHist
 
   root.style.setProperty('--primary-color', lastPrimary.hex);
   root.style.setProperty('--secondary-color', lastSecondary.hex);
+  root.style.setProperty('--accent', lastPrimary.hex);
+  root.style.setProperty('--accent-rgb', `${lastPrimary.rgb.r}, ${lastPrimary.rgb.g}, ${lastPrimary.rgb.b}`);
   dropzone.style.setProperty('--dropzone-color', lastPrimary.hex);
   bgOrb1.style.background = `radial-gradient(circle, ${lastPrimary.hex}, transparent 70%)`;
   bgOrb2.style.background = `radial-gradient(circle, ${lastSecondary.hex}, transparent 70%)`;
