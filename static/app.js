@@ -608,6 +608,9 @@ function switchMode(mode) {
     fileInput.value = '';
     fileLabelText.textContent = 'Drop an image or click to browse';
     dropzone.classList.remove('has-file');
+    // Re-run color extraction for current track
+    lfmLastTrackKey = null;
+    if (lfmPollTimer) lfmPoll();
   }
   updateMusicUI();
   updateClearBtn();
