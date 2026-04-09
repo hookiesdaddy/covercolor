@@ -1,3 +1,45 @@
+// ── Intro animation ───────────────────────────────────────────────────────────
+;(function runIntro() {
+  const overlay  = document.getElementById('intro-overlay');
+  const dot      = document.getElementById('intro-dot');
+  const textEl   = document.getElementById('intro-text');
+  const cursor   = document.querySelector('.intro-cursor');
+  const pill     = document.getElementById('intro-pill');
+  if (!overlay) return;
+
+  const word = 'colorpick';
+  let i = 0;
+
+  // Step 1: type out the word
+  function typeNext() {
+    if (i < word.length) {
+      textEl.textContent += word[i++];
+      setTimeout(typeNext, 85);
+    } else {
+      // Step 2: fill the dot
+      setTimeout(() => {
+        dot.classList.add('filled');
+        cursor.classList.add('hidden');
+
+        // Step 3: expand pill into card shape
+        setTimeout(() => {
+          pill.classList.add('expand');
+
+          // Step 4: fade out overlay, reveal app
+          setTimeout(() => {
+            overlay.classList.add('fade-out');
+            document.body.classList.add('intro-done');
+            setTimeout(() => overlay.remove(), 500);
+          }, 500);
+        }, 380);
+      }, 300);
+    }
+  }
+
+  // Small delay before typing starts
+  setTimeout(typeNext, 400);
+})();
+
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const tabs              = document.querySelectorAll('.tab');
 const uploadMode        = document.getElementById('upload-mode');
