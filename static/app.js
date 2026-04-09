@@ -133,6 +133,16 @@ const DEFAULT_FAMILIES = [
   { name: 'Pink',   hue: 330, color: '#ec4899' },
 ];
 
+// ── Art cross-fade ────────────────────────────────────────────────────────────
+function setArtSrc(src) {
+  if (!src || npArt.src === src) return;
+  npArt.style.opacity = '0';
+  setTimeout(() => {
+    npArt.src = src;
+    npArt.onload = () => { npArt.style.opacity = ''; };
+  }, 280);
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let activeMode     = 'upload';
 let appMode        = 'music'; // 'music' | 'photos'
@@ -404,7 +414,7 @@ reloadBtn.addEventListener('click', async () => {
       if (track) {
         npTitle.textContent  = track.title;
         npArtist.textContent = track.artist;
-        if (track.art) npArt.src = track.art;
+        if (track.art) setArtSrc(track.art);
         await extractFromArt(track.art, `${track.title} — ${track.artist}`);
       }
     } catch (e) { /* silent */ }
@@ -955,7 +965,7 @@ async function lfmPoll() {
       if (track) {
         npTitle.textContent  = track.title;
         npArtist.textContent = track.artist;
-        if (track.art) npArt.src = track.art;
+        if (track.art) setArtSrc(track.art);
         const trackKey = `${track.artist}|||${track.title}`;
         if (trackKey !== lfmLastTrackKey) {
           lfmLastTrackKey = trackKey;
@@ -996,7 +1006,7 @@ async function lfmPoll() {
     // Update UI regardless of live/last-played
     npTitle.textContent  = track.title;
     npArtist.textContent = track.artist;
-    if (track.art) npArt.src = track.art;
+    if (track.art) setArtSrc(track.art);
 
     const trackKey = `${track.artist}|||${track.title}`;
 
@@ -1380,7 +1390,7 @@ mainExtractBtn.addEventListener('click', async () => {
     if (track) {
       npTitle.textContent  = track.title;
       npArtist.textContent = track.artist;
-      if (track.art) npArt.src = track.art;
+      if (track.art) setArtSrc(track.art);
       await extractFromArt(track.art, `${track.title} — ${track.artist}`);
     }
   } catch (e) { /* silent */ }
@@ -1453,7 +1463,7 @@ updateMusicUI();
         if (track) {
           npTitle.textContent  = track.title;
           npArtist.textContent = track.artist;
-          if (track.art) npArt.src = track.art;
+          if (track.art) setArtSrc(track.art);
           lfmLastTrackKey = `${track.artist}|||${track.title}`;
           updateMusicUI();
         }
