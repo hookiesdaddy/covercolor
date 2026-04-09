@@ -974,8 +974,8 @@ async function lfmPoll() {
           npSyncLabel.textContent = 'Syncing…';
           await extractFromArt(track.art, `${track.title} — ${track.artist}`);
         } else {
-          npHero.classList.add('syncing');
-          npSyncLabel.textContent = 'Synced ✓';
+          npHero.classList.toggle('syncing', track.isLive);
+          npSyncLabel.textContent = track.isLive ? 'Synced ✓' : 'Paused';
         }
         return;
       } else {
@@ -1234,12 +1234,13 @@ async function spotifyGetNowPlaying() {
   if (resp.status === 204 || resp.status === 401) return null;
   if (!resp.ok) throw new Error(`Spotify ${resp.status}`);
   const data = await resp.json();
-  if (!data?.item || !data.is_playing) return null;
+  if (!data?.item) return null;
+  setPlaybackIcon(data.is_playing);
   return {
     title: data.item.name,
     artist: data.item.artists.map(a => a.name).join(', '),
     art: data.item.album.images[0]?.url || '',
-    isLive: true,
+    isLive: data.is_playing,
   };
 }
 
@@ -1314,8 +1315,10 @@ playbackNext.addEventListener('click', () => skipAndRefresh('next'));
 playbackToggleBtn.addEventListener('click', async () => {
   const token = await getSpotifyToken();
   if (!token) return;
-  await spotifyPlayerAction(spotifyIsPlaying ? 'pause' : 'play');
-  setPlaybackIcon(!spotifyIsPlaying);
+  const wasPlaying = spotifyIsPlaying;
+  setPlaybackIcon(!wasPlaying); // optimistic update
+  await spotifyPlayerAction(wasPlaying ? 'pause' : 'play');
+  setTimeout(spotifyFetchPlaybackState, 600); // confirm real state
 });
 
 spotifyPlaybackToggle.addEventListener('change', () => {
