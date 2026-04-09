@@ -58,47 +58,6 @@ body.theme-light {
   --orb-opacity: 0.25;
 }
 
-/* ── Intro animation ─────────────────────────────────────────────────────────── */
-.card.intro-pill {
-  /* Collapsed pill state — centered small */
-  border-radius: 50px !important;
-  padding: 0.65rem 1.1rem !important;
-  width: auto !important;
-  max-width: none !important;
-  align-self: center;
-  transition: border-radius 0.55s cubic-bezier(0.4,0,0.2,1),
-              padding 0.55s cubic-bezier(0.4,0,0.2,1),
-              width 0.55s cubic-bezier(0.4,0,0.2,1),
-              max-width 0.55s cubic-bezier(0.4,0,0.2,1) !important;
-}
-.card.intro-pill header {
-  display: flex; align-items: center;
-  gap: 0; margin: 0; padding: 0;
-}
-.card.intro-pill .mode-tabs,
-.card.intro-pill .header-actions { display: none !important; }
-
-/* Card body hidden during intro */
-.card-body { display: contents; }
-.card-body.intro-hidden { display: none; }
-.card-body.reveal { display: contents; animation: fadeIn 0.35s ease both; }
-
-/* Logo dot outline state during intro */
-.logo-dot.intro-outline {
-  background: transparent !important;
-  border: 2px solid var(--muted);
-  box-sizing: border-box;
-}
-
-/* Typing cursor in logo */
-.logo-cursor {
-  font-weight: 300; color: var(--muted);
-  animation: blink 0.8s step-end infinite;
-  margin-left: 1px;
-}
-.logo-cursor.hidden { display: none; }
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-
 /* ── Base ───────────────────────────────────────────────────────────────────── */
 body {
   min-height: 100vh;
