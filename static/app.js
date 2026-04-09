@@ -1455,16 +1455,22 @@ updateMusicUI();
   }
 
   // ── Theme toggle ────────────────────────────────────────────────────────────
-  const themeToggle = document.getElementById('theme-toggle');
+  const themeIconBtn  = document.getElementById('theme-icon-btn');
+  const themeIconSun  = document.getElementById('theme-icon-sun');
+  const themeIconMoon = document.getElementById('theme-icon-moon');
   const LS_THEME = 'colorpick_theme';
+  let isLightMode = localStorage.getItem(LS_THEME) === 'light';
   function applyTheme(light) {
+    isLightMode = light;
     document.body.classList.toggle('theme-light', light);
-    if (themeToggle) themeToggle.checked = light;
+    // Show sun in dark mode (click to go light), moon in light mode (click to go dark)
+    if (themeIconSun)  themeIconSun.classList.toggle('hidden', light);
+    if (themeIconMoon) themeIconMoon.classList.toggle('hidden', !light);
   }
-  applyTheme(localStorage.getItem(LS_THEME) === 'light');
-  if (themeToggle) {
-    themeToggle.addEventListener('change', () => {
-      const light = themeToggle.checked;
+  applyTheme(isLightMode);
+  if (themeIconBtn) {
+    themeIconBtn.addEventListener('click', () => {
+      const light = !isLightMode;
       localStorage.setItem(LS_THEME, light ? 'light' : 'dark');
       applyTheme(light);
     });
