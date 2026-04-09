@@ -569,6 +569,11 @@ header { display: flex; align-items: center; gap: 0.5rem; }
   font-size: 0.68rem; font-weight: 600; color: var(--accent);
 }
 .settings-row-badge.hidden { display: none; }
+.settings-row-recommended {
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #6366f1; background: rgba(99,102,241,0.12);
+  padding: 0.15rem 0.45rem; border-radius: 20px;
+}
 .settings-row-chevron { color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
 .settings-row.open .settings-row-chevron { transform: rotate(180deg); }
 .settings-row-body {
