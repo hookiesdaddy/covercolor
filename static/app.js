@@ -1461,11 +1461,14 @@ updateMusicUI();
   const themeIconSun  = document.getElementById('theme-icon-sun');
   const themeIconMoon = document.getElementById('theme-icon-moon');
   const LS_THEME = 'colorpick_theme';
-  let isLightMode = localStorage.getItem(LS_THEME) === 'light';
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const saved = localStorage.getItem(LS_THEME);
+  // If no saved pref, follow system; otherwise use saved
+  let isLightMode = saved ? saved === 'light' : !systemDark;
   function applyTheme(light) {
     isLightMode = light;
     document.body.classList.toggle('theme-light', light);
-    // Show sun in dark mode (click to go light), moon in light mode (click to go dark)
+    document.body.classList.toggle('theme-dark', !light);
     if (themeIconSun)  themeIconSun.classList.toggle('hidden', light);
     if (themeIconMoon) themeIconMoon.classList.toggle('hidden', !light);
   }

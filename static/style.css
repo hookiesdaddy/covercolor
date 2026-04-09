@@ -41,7 +41,22 @@
   }
 }
 
-/* ── Manual light mode override ─────────────────────────────────────────────── */
+/* ── Manual theme overrides (beat the media query) ──────────────────────────── */
+body.theme-dark {
+  --bg: #0a0a0f;
+  --card-bg: rgba(18,18,28,0.55);
+  --border: rgba(255,255,255,0.10);
+  --border-hover: rgba(255,255,255,0.20);
+  --text: #f0f0f0;
+  --text-secondary: #aaaaaa;
+  --muted: #666666;
+  --subtle: rgba(255,255,255,0.07);
+  --input-bg: rgba(255,255,255,0.05);
+  --card-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 32px 80px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.4);
+  --glass-highlight: rgba(255,255,255,0.08);
+  --glass-specular: rgba(255,255,255,0.12);
+  --orb-opacity: 0.5;
+}
 body.theme-light {
   --bg: #d8d8e8;
   --card-bg: rgba(255,255,255,0.38);
