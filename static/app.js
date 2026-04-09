@@ -635,9 +635,18 @@ photoArtWrap.addEventListener('click', () => fileInput.click());
 photoArtWrap.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 
 
+// ── View transitions ──────────────────────────────────────────────────────────
+function showView(incoming, outgoing, direction = 'forward') {
+  outgoing.classList.add('hidden');
+  incoming.classList.remove('hidden');
+  incoming.classList.remove('view-enter-forward', 'view-enter-back');
+  void incoming.offsetWidth; // force reflow
+  incoming.classList.add(direction === 'forward' ? 'view-enter-forward' : 'view-enter-back');
+}
+
 // ── Settings panel ────────────────────────────────────────────────────────────
-settingsBtn.addEventListener('click', () => { mainView.classList.add('hidden'); settingsView.classList.remove('hidden'); });
-settingsBack.addEventListener('click', () => { settingsView.classList.add('hidden'); mainView.classList.remove('hidden'); });
+settingsBtn.addEventListener('click', () => showView(settingsView, mainView, 'forward'));
+settingsBack.addEventListener('click', () => showView(mainView, settingsView, 'back'));
 
 // ── History panel ─────────────────────────────────────────────────────────────
 function formatSize(bytes) {
@@ -735,14 +744,10 @@ function hexToRgb(hex) {
 }
 
 historyBtn.addEventListener('click', () => {
-  mainView.classList.add('hidden');
-  historyView.classList.remove('hidden');
+  showView(historyView, mainView, 'forward');
   renderHistory();
 });
-historyBack.addEventListener('click', () => {
-  historyView.classList.add('hidden');
-  mainView.classList.remove('hidden');
-});
+historyBack.addEventListener('click', () => showView(mainView, historyView, 'back'));
 historyClearBtn.addEventListener('click', () => {
   localStorage.removeItem(LS_HISTORY);
   renderHistory();
@@ -1436,19 +1441,33 @@ updateMusicUI();
         updateSpotifyUI();
         showSpotifyStatus('ok', 'Spotify connected!');
         // Open settings to show success
-        mainView.classList.add('hidden');
-        settingsView.classList.remove('hidden');
+        showView(settingsView, mainView, 'forward');
         selectService('spotify');
       } else {
         showSpotifyStatus('error', data.error_description || 'Auth failed.');
-        mainView.classList.add('hidden');
-        settingsView.classList.remove('hidden');
+        showView(settingsView, mainView, 'forward');
         selectService('spotify');
       }
     } catch (e) {
       showSpotifyStatus('error', 'Auth failed: ' + e.message);
     }
     return;
+  }
+
+  // ── Theme toggle ────────────────────────────────────────────────────────────
+  const themeToggle = document.getElementById('theme-toggle');
+  const LS_THEME = 'colorpick_theme';
+  function applyTheme(light) {
+    document.body.classList.toggle('theme-light', light);
+    if (themeToggle) themeToggle.checked = light;
+  }
+  applyTheme(localStorage.getItem(LS_THEME) === 'light');
+  if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+      const light = themeToggle.checked;
+      localStorage.setItem(LS_THEME, light ? 'light' : 'dark');
+      applyTheme(light);
+    });
   }
 
   if (localStorage.getItem(LS_LFM_SYNC) === 'true') {
