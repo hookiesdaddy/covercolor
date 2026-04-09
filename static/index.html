@@ -7,18 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=60" />
+  <link rel="stylesheet" href="/static/style.css?v=61" />
 </head>
 <body>
-  <!-- ── Intro animation overlay ── -->
-  <div id="intro-overlay" class="intro-overlay">
-    <div id="intro-pill" class="intro-pill">
-      <span id="intro-dot" class="intro-dot"></span>
-      <span id="intro-text" class="intro-text"></span>
-      <span class="intro-cursor">|</span>
-    </div>
-  </div>
-
   <div class="bg-orbs">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -31,7 +22,7 @@
       <header>
         <div class="logo">
           <span class="logo-dot" id="logo-dot"></span>
-          colorpick
+          <span id="logo-text"></span><span id="logo-cursor" class="logo-cursor">|</span>
         </div>
         <div class="mode-tabs">
           <button class="mode-tab active" id="mode-music-btn" aria-label="Music mode">Music</button>
@@ -51,6 +42,8 @@
           </button>
         </div>
       </header>
+
+      <div id="card-body" class="card-body intro-hidden">
 
       <!-- ── No service state ── -->
       <div id="no-service" class="no-service hidden">
@@ -316,6 +309,8 @@
           <span class="btn-text">Extract Color</span>
         </button>
       </form>
+
+      </div><!-- /card-body -->
     </div>
 
     <!-- ── History view ── -->
@@ -462,6 +457,6 @@
 
   </div>
 
-  <script src="/static/app.js?v=52"></script>
+  <script src="/static/app.js?v=53"></script>
 </body>
 </html>

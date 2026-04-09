@@ -59,66 +59,45 @@ body.theme-light {
 }
 
 /* ── Intro animation ─────────────────────────────────────────────────────────── */
-.intro-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg);
-  transition: opacity 0.5s ease;
-}
-.intro-overlay.fade-out { opacity: 0; pointer-events: none; }
-
-.intro-pill {
-  display: flex; align-items: center; gap: 0.55rem;
-  padding: 0.65rem 1.1rem;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 50px;
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
-  box-shadow: var(--card-shadow);
-  white-space: nowrap; overflow: hidden;
+.card.intro-pill {
+  /* Collapsed pill state — centered small */
+  border-radius: 50px !important;
+  padding: 0.65rem 1.1rem !important;
+  width: auto !important;
+  max-width: none !important;
+  align-self: center;
   transition: border-radius 0.55s cubic-bezier(0.4,0,0.2,1),
-              width 0.55s cubic-bezier(0.4,0,0.2,1),
-              height 0.55s cubic-bezier(0.4,0,0.2,1),
               padding 0.55s cubic-bezier(0.4,0,0.2,1),
-              max-width 0.55s cubic-bezier(0.4,0,0.2,1);
+              width 0.55s cubic-bezier(0.4,0,0.2,1),
+              max-width 0.55s cubic-bezier(0.4,0,0.2,1) !important;
 }
-.intro-pill.expand {
-  border-radius: 24px;
-  width: 440px; max-width: calc(100vw - 3rem);
-  height: 100%;
-  max-height: calc(100vh - 3rem);
-  padding: 2rem;
-  align-items: flex-start;
+.card.intro-pill header {
+  display: flex; align-items: center;
+  gap: 0; margin: 0; padding: 0;
 }
+.card.intro-pill .mode-tabs,
+.card.intro-pill .header-actions { display: none !important; }
 
-.intro-dot {
-  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+/* Card body hidden during intro */
+.card-body { display: contents; }
+.card-body.intro-hidden { display: none; }
+.card-body.reveal { display: contents; animation: fadeIn 0.35s ease both; }
+
+/* Logo dot outline state during intro */
+.logo-dot.intro-outline {
+  background: transparent !important;
   border: 2px solid var(--muted);
-  background: transparent;
-  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
-}
-.intro-dot.filled {
-  background: radial-gradient(circle at 35% 35%, #a78bfa, #6366f1 50%, #ec4899);
-  border-color: transparent;
-  box-shadow: 0 0 10px rgba(99,102,241,0.6);
+  box-sizing: border-box;
 }
 
-.intro-text {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem; font-weight: 700;
-  color: var(--text); letter-spacing: -0.01em;
-}
-.intro-cursor {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem; font-weight: 300;
-  color: var(--muted);
+/* Typing cursor in logo */
+.logo-cursor {
+  font-weight: 300; color: var(--muted);
   animation: blink 0.8s step-end infinite;
+  margin-left: 1px;
 }
-.intro-cursor.hidden { display: none; }
+.logo-cursor.hidden { display: none; }
 @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-
-body.intro-done .card { animation: fadeIn 0.3s ease both; }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
 body {

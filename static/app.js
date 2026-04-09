@@ -1,43 +1,46 @@
 // ── Intro animation ───────────────────────────────────────────────────────────
 ;(function runIntro() {
-  const overlay  = document.getElementById('intro-overlay');
-  const dot      = document.getElementById('intro-dot');
-  const textEl   = document.getElementById('intro-text');
-  const cursor   = document.querySelector('.intro-cursor');
-  const pill     = document.getElementById('intro-pill');
-  if (!overlay) return;
+  const card     = document.querySelector('.card');
+  const logoDot  = document.getElementById('logo-dot');
+  const logoText = document.getElementById('logo-text');
+  const cursor   = document.getElementById('logo-cursor');
+  const cardBody = document.getElementById('card-body');
+  if (!card || !logoText) return;
+
+  // Start in pill state
+  card.classList.add('intro-pill');
+  if (logoDot) logoDot.classList.add('intro-outline');
 
   const word = 'colorpick';
   let i = 0;
 
-  // Step 1: type out the word
   function typeNext() {
     if (i < word.length) {
-      textEl.textContent += word[i++];
+      logoText.textContent += word[i++];
       setTimeout(typeNext, 85);
     } else {
-      // Step 2: fill the dot
+      // Dot fills
       setTimeout(() => {
-        dot.classList.add('filled');
-        cursor.classList.add('hidden');
+        if (logoDot) logoDot.classList.remove('intro-outline');
+        if (cursor) cursor.classList.add('hidden');
 
-        // Step 3: expand pill into card shape
+        // Expand card to full size
         setTimeout(() => {
-          pill.classList.add('expand');
+          card.classList.remove('intro-pill');
 
-          // Step 4: fade out overlay, reveal app
+          // Reveal content after expansion
           setTimeout(() => {
-            overlay.classList.add('fade-out');
-            document.body.classList.add('intro-done');
-            setTimeout(() => overlay.remove(), 500);
-          }, 500);
-        }, 380);
-      }, 300);
+            if (cardBody) {
+              cardBody.classList.remove('intro-hidden');
+              cardBody.classList.add('reveal');
+            }
+          }, 480);
+        }, 320);
+      }, 280);
     }
   }
 
-  // Small delay before typing starts
-  setTimeout(typeNext, 400);
+  setTimeout(typeNext, 350);
 })();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
