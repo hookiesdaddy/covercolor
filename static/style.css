@@ -431,6 +431,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .prefs-expand.hidden {
   max-height: 0;
   opacity: 0;
+  margin-top: calc(-0.85rem); /* cancel the flex gap so collapsed state adds no extra space */
 }
 
 /* ── Set Lights ─────────────────────────────────────────────────────────────── */
