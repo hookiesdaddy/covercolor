@@ -84,6 +84,7 @@ const connectPromptBtn  = document.getElementById('connect-prompt-btn');
 const noService         = document.getElementById('no-service');
 const npHero            = document.getElementById('np-hero');
 const npArt             = document.getElementById('np-art');
+const npArtWrap         = document.querySelector('.np-art-wrap');
 const npTitle           = document.getElementById('np-title');
 const npArtist          = document.getElementById('np-artist');
 const npSyncLabel       = document.getElementById('np-sync-label');
@@ -117,11 +118,18 @@ const DEFAULT_FAMILIES = [
 
 // ── Art cross-fade ────────────────────────────────────────────────────────────
 function setArtSrc(src) {
-  if (!src || npArt.src === src) return;
+  if (!src) return;
+  if (npArt.src === src) {
+    npArtWrap.classList.remove('art-loading');
+    return;
+  }
   npArt.style.opacity = '0';
   setTimeout(() => {
     npArt.src = src;
-    npArt.onload = () => { npArt.style.opacity = ''; };
+    npArt.onload = () => {
+      npArt.style.opacity = '';
+      npArtWrap.classList.remove('art-loading');
+    };
   }, 280);
 }
 
@@ -573,8 +581,8 @@ function showResult(data, { fromSync = false, name = null, size = null, skipHist
   root.style.setProperty('--secondary-color', lastSecondary.hex);
   root.style.setProperty('--accent', lastPrimary.hex);
   root.style.setProperty('--accent-rgb', `${lastPrimary.rgb.r}, ${lastPrimary.rgb.g}, ${lastPrimary.rgb.b}`);
-  bgOrb1.style.background = `radial-gradient(circle, ${lastPrimary.hex}, transparent 70%)`;
-  bgOrb2.style.background = `radial-gradient(circle, ${lastSecondary.hex}, transparent 70%)`;
+  bgOrb1.style.background = `radial-gradient(circle, ${lastPrimary.hex}, transparent 55%)`;
+  bgOrb2.style.background = `radial-gradient(circle, ${lastSecondary.hex}, transparent 55%)`;
 
   hexPrimaryText.textContent   = lastPrimary.hex.toUpperCase();
   rgbPrimary.textContent       = `${data.rgb.r}, ${data.rgb.g}, ${data.rgb.b}`;
@@ -1521,6 +1529,9 @@ async function spotifyFetchPlaybackState() {
 }
 
 async function skipAndRefresh(direction) {
+  // Immediately fade the art and show loading state while we wait for the next track
+  npArt.style.opacity = '0';
+  npArtWrap.classList.add('art-loading');
   await spotifyPlayerAction(direction);
   // Debounce: only fire one poll even if user skips rapidly
   lfmLastTrackKey = null;
