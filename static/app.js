@@ -121,6 +121,9 @@ const mainExtractBtn    = document.getElementById('main-extract-btn');
 const npSyncBadge       = document.getElementById('np-sync-badge');
 const mainUrlWrap       = document.getElementById('main-url-wrap');
 const colorGradientBox  = document.getElementById('color-gradient-box');
+const cacheTog          = document.getElementById('cache-toggle');
+const pollSlider        = document.getElementById('poll-rate-slider');
+const pollRateVal       = document.getElementById('poll-rate-value');
 
 // ── Color families ────────────────────────────────────────────────────────────
 const DEFAULT_FAMILIES = [
@@ -169,6 +172,9 @@ const LS_SPOTIFY_REFRESH    = 'colorpick_spotify_refresh';
 const LS_SPOTIFY_EXPIRES    = 'colorpick_spotify_expires';
 const LS_SPOTIFY_PLAYBACK   = 'colorpick_spotify_playback';
 const LS_ACTIVE_SERVICE     = 'colorpick_active_service'; // 'lastfm' | 'spotify'
+const LS_COLOR_CACHE        = 'covercolor_color_cache';
+const LS_CACHE_ENABLED      = 'covercolor_cache_enabled';
+const LS_POLL_RATE          = 'covercolor_poll_rate';
 const HISTORY_MAX       = 30;
 
 const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
@@ -833,6 +839,32 @@ reloadHintBtn.addEventListener('click', () => {
   reloadBtn.click();
 });
 
+// Cache by album toggle
+cacheTog.checked = localStorage.getItem(LS_CACHE_ENABLED) !== 'false'; // default true
+cacheTog.addEventListener('change', () => {
+  localStorage.setItem(LS_CACHE_ENABLED, String(cacheTog.checked));
+});
+
+// Poll rate slider (snaps to 5 / 10 / 30 seconds)
+const POLL_SNAPS = [5, 10, 30];
+function pollSnapIndex(secs) {
+  const idx = POLL_SNAPS.indexOf(secs);
+  return idx >= 0 ? idx : 1; // default to 10s
+}
+const _savedRate = parseInt(localStorage.getItem(LS_POLL_RATE) || '10', 10);
+const _savedIdx = pollSnapIndex(_savedRate);
+pollSlider.value = _savedIdx;
+pollRateVal.textContent = `${POLL_SNAPS[_savedIdx]}s`;
+pollSlider.addEventListener('input', () => {
+  const rate = POLL_SNAPS[parseInt(pollSlider.value, 10)];
+  pollRateVal.textContent = `${rate}s`;
+  localStorage.setItem(LS_POLL_RATE, String(rate));
+  if (lfmPollTimer) {
+    clearInterval(lfmPollTimer);
+    lfmPollTimer = setInterval(lfmPoll, rate * 1000);
+  }
+});
+
 // ── Color preferences drag list ───────────────────────────────────────────────
 function buildPrefsList() {
   const families = getOrderedFamilies();
@@ -1047,18 +1079,65 @@ async function extractFromArt(artUrl, name = null) {
   const apiKey = loadApiKey();
   if (apiKey) headers['X-Govee-Api-Key'] = apiKey;
   const skipNeutrals = loadSkipNeutrals();
+  const cacheEnabled = localStorage.getItem(LS_CACHE_ENABLED) !== 'false';
+
+  // ── Album cache lookup ───────────────────────────────────────────────────────
+  if (cacheEnabled) {
+    try {
+      const cache = JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}');
+      if (cache[artUrl]) {
+        const cached = cache[artUrl];
+        document.body.classList.remove('extracting');
+        showResult(cached, { fromSync: true, name });
+        if (syncOn) {
+          const useSecondary = loadPreferSec();
+          const hexColor = useSecondary && cached.secondary ? cached.secondary.hex : cached.hex;
+          await fetch('/set-light-hex', {
+            method: 'POST', headers,
+            body: (() => { const fd2 = new FormData(); fd2.append('hex', hexColor); return fd2; })(),
+          });
+          npHero.classList.add('syncing');
+          npSyncLabel.textContent = 'Synced ✓';
+        }
+        return;
+      }
+    } catch {}
+  }
 
   try {
     // Fetch art in browser to avoid server-side URL access issues
     const artResp = await fetch(artUrl);
     if (!artResp.ok) throw new Error(`Art fetch ${artResp.status}`);
     const artBlob = await artResp.blob();
+
+    // ── Downsample to 100×100 for faster extraction (displayed art unaffected) ──
+    let uploadBlob = artBlob;
+    try {
+      const bmp = await createImageBitmap(artBlob);
+      const canvas = Object.assign(document.createElement('canvas'), { width: 100, height: 100 });
+      canvas.getContext('2d').drawImage(bmp, 0, 0, 100, 100);
+      bmp.close();
+      uploadBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+    } catch {}
+
     const fd = new FormData();
-    fd.append('file', artBlob, 'art.jpg');
+    fd.append('file', uploadBlob, 'art.jpg');
     fd.append('skip_neutrals', skipNeutrals ? '1' : '0');
     const analyzeResp = await fetch('/extract', { method: 'POST', body: fd, headers });
     if (!analyzeResp.ok) throw new Error(`Extract ${analyzeResp.status}`);
     const colorData = await analyzeResp.json();
+
+    // ── Write to album cache ─────────────────────────────────────────────────────
+    if (cacheEnabled) {
+      try {
+        const cache = JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}');
+        cache[artUrl] = colorData;
+        const keys = Object.keys(cache);
+        if (keys.length > 100) delete cache[keys[0]];
+        localStorage.setItem(LS_COLOR_CACHE, JSON.stringify(cache));
+      } catch {}
+    }
+
     showResult(colorData, { fromSync: true, name });
 
     if (syncOn) {
@@ -1083,7 +1162,9 @@ function startLfmSync() {
   if (lfmPollTimer) return;
   updateMusicUI();
   lfmPoll();
-  lfmPollTimer = setInterval(lfmPoll, 10000);
+  const _storedRate = parseInt(localStorage.getItem(LS_POLL_RATE) || '10', 10);
+  const pollRate = (POLL_SNAPS.includes(_storedRate) ? _storedRate : 10) * 1000;
+  lfmPollTimer = setInterval(lfmPoll, pollRate);
 }
 
 function stopLfmSync() {

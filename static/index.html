@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=65" />
+  <link rel="stylesheet" href="/static/style.css?v=68" />
 </head>
 <body>
   <div class="bg-orbs">
@@ -451,10 +451,46 @@
           </div>
         </div>
       </section>
+
+      <section class="settings-section">
+        <h3 class="section-title">Sync</h3>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+              </svg>
+              Cache colors by album
+            </span>
+            <span class="poll-rate-desc">Reuse extracted colors for the same album</span>
+          </div>
+          <div class="toggle-switch">
+            <input type="checkbox" id="cache-toggle" />
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Poll rate
+            </span>
+            <span class="poll-rate-desc">How often to check what's playing</span>
+          </div>
+          <div class="poll-rate-control">
+            <input type="range" id="poll-rate-slider" min="0" max="2" step="1" value="1" />
+            <span id="poll-rate-value">10s</span>
+          </div>
+        </div>
+      </section>
     </div>
 
   </div>
 
-  <script src="/static/app.js?v=56"></script>
+  <script src="/static/app.js?v=59"></script>
 </body>
 </html>
