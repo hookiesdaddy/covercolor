@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=69" />
+  <link rel="stylesheet" href="/static/style.css?v=70" />
 </head>
 <body>
   <div class="bg-orbs">
@@ -206,10 +206,11 @@
             </span>
             <span class="poll-rate-desc">Floor for dark album art so lights don't go black</span>
           </div>
-          <div class="poll-rate-control">
-            <input type="range" id="brightness-floor-slider" min="0" max="60" step="5" value="15" />
-            <span id="brightness-floor-value">15%</span>
-          </div>
+          <select id="brightness-floor-select" class="idle-behavior-select">
+            <option value="low">Low</option>
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+          </select>
         </div>
 
         <label class="toggle-row">
@@ -538,6 +539,6 @@
 
   </div>
 
-  <script src="/static/app.js?v=61"></script>
+  <script src="/static/app.js?v=62"></script>
 </body>
 </html>

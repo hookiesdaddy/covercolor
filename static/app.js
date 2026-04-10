@@ -124,8 +124,7 @@ const colorGradientBox  = document.getElementById('color-gradient-box');
 const cacheTog          = document.getElementById('cache-toggle');
 const pollSlider        = document.getElementById('poll-rate-slider');
 const pollRateVal       = document.getElementById('poll-rate-value');
-const brightnessSlider  = document.getElementById('brightness-floor-slider');
-const brightnessVal     = document.getElementById('brightness-floor-value');
+const brightnessSelect  = document.getElementById('brightness-floor-select');
 const satBoostToggle    = document.getElementById('sat-boost-toggle');
 const idleBehaviorSel   = document.getElementById('idle-behavior-select');
 const deviceChecklist   = document.getElementById('device-checklist');
@@ -326,8 +325,10 @@ function applyColorTransforms(hex) {
     else                h = ((r - g) / d + 4) / 6;
   }
 
-  // Apply brightness floor
-  const floor = parseInt(localStorage.getItem(LS_BRIGHTNESS_FLOOR) ?? '15', 10) / 100;
+  // Apply brightness floor (low=5%, normal=15%, high=35%)
+  const floorLevel = localStorage.getItem(LS_BRIGHTNESS_FLOOR) || 'normal';
+  const floorMap = { low: 0.05, normal: 0.15, high: 0.35 };
+  const floor = floorMap[floorLevel] ?? 0.15;
   l = Math.max(l, floor);
 
   // Apply saturation boost (+30%, clamped)
@@ -946,15 +947,11 @@ cacheTog.addEventListener('change', () => {
   localStorage.setItem(LS_CACHE_ENABLED, String(cacheTog.checked));
 });
 
-// Brightness floor slider (default 15%)
-const _savedFloor = parseInt(localStorage.getItem(LS_BRIGHTNESS_FLOOR) ?? '15', 10);
-if (brightnessSlider) { brightnessSlider.value = _savedFloor; }
-if (brightnessVal) { brightnessVal.textContent = `${_savedFloor}%`; }
-if (brightnessSlider) {
-  brightnessSlider.addEventListener('input', () => {
-    const v = parseInt(brightnessSlider.value, 10);
-    if (brightnessVal) brightnessVal.textContent = `${v}%`;
-    localStorage.setItem(LS_BRIGHTNESS_FLOOR, String(v));
+// Brightness floor select (low / normal / high)
+if (brightnessSelect) {
+  brightnessSelect.value = localStorage.getItem(LS_BRIGHTNESS_FLOOR) || 'normal';
+  brightnessSelect.addEventListener('change', () => {
+    localStorage.setItem(LS_BRIGHTNESS_FLOOR, brightnessSelect.value);
     lastSentHex = null; // force re-apply transforms on next sync
   });
 }
