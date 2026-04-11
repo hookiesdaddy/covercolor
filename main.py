@@ -2,6 +2,7 @@ import asyncio
 import json
 import socket
 import time
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -18,7 +19,17 @@ from pydantic import BaseModel
 from config import settings
 from tools.extract_color import extract_dominant_color
 
-app = FastAPI(title="colorpick", version=settings.version)
+# ── Shared HTTP client (one connection pool for the lifetime of the server) ───
+http_client: httpx.AsyncClient | None = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global http_client
+    http_client = httpx.AsyncClient(timeout=10.0)
+    yield
+    await http_client.aclose()
+
+app = FastAPI(title="colorpick", version=settings.version, lifespan=lifespan)
 
 app.add_middleware(GZipMiddleware, minimum_size=512)
 app.add_middleware(
@@ -169,9 +180,8 @@ async def govee_power(
     if not api_key:
         raise HTTPException(status_code=422, detail="No API key configured")
     devices = _parse_selected_devices(selected_devices)
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        tasks = [_set_govee_power(client, d, state, api_key) for d in devices]
-        results = list(await asyncio.gather(*tasks))
+    tasks = [_set_govee_power(http_client, d, state, api_key) for d in devices]
+    results = list(await asyncio.gather(*tasks))
     return {"state": state, "lights": results}
 
 
@@ -314,8 +324,7 @@ async def test_govee(x_govee_api_key: Optional[str] = Header(default=None)):
     if not api_key:
         raise HTTPException(status_code=422, detail="No API key provided")
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(
+        resp = await http_client.get(
                 GOVEE_DEVICES_URL,
                 headers={"Govee-API-Key": api_key},
             )
@@ -351,13 +360,12 @@ async def _get_image_bytes(
 
 async def _fetch_url(url: str) -> Tuple[bytes, str]:
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            content_length = int(resp.headers.get("content-length", 0))
-            if content_length > settings.max_image_size_bytes:
-                raise HTTPException(status_code=413, detail="Image exceeds 10MB limit")
-            data = resp.content
+        resp = await http_client.get(url, timeout=15.0, follow_redirects=True)
+        resp.raise_for_status()
+        content_length = int(resp.headers.get("content-length", 0))
+        if content_length > settings.max_image_size_bytes:
+            raise HTTPException(status_code=413, detail="Image exceeds 10MB limit")
+        data = resp.content
     except HTTPException:
         raise
     except httpx.HTTPStatusError as e:
@@ -415,9 +423,8 @@ async def _set_all_lights(r: int, g: int, b: int, api_key: str = "", devices: li
     devs = devices if devices is not None else settings.govee_devices
     if not key:
         return [{"name": d["name"], "status": "skipped", "detail": "No API key configured"} for d in devs]
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        tasks = [_set_govee_light(client, device, r, g, b, key) for device in devs]
-        return list(await asyncio.gather(*tasks))
+    tasks = [_set_govee_light(http_client, device, r, g, b, key) for device in devs]
+    return list(await asyncio.gather(*tasks))
 
 
 async def _set_govee_lan_light(device: dict, r: int, g: int, b: int) -> dict:

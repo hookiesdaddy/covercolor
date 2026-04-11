@@ -133,6 +133,22 @@ function setArtSrc(src) {
   }, 280);
 }
 
+// ── In-memory color cache (keyed by art URL) ──────────────────────────────────
+// Loaded once from localStorage at startup; lookups are instant Map.get() calls.
+// Writes go to both the Map and localStorage so the cache survives page reloads.
+const _colorCacheMap = (() => {
+  try { return new Map(Object.entries(JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}'))); }
+  catch { return new Map(); }
+})();
+
+function cacheGet(url) { return _colorCacheMap.get(url) ?? null; }
+function cacheSet(url, data) {
+  _colorCacheMap.set(url, data);
+  if (_colorCacheMap.size > 100) _colorCacheMap.delete(_colorCacheMap.keys().next().value);
+  try { localStorage.setItem(LS_COLOR_CACHE, JSON.stringify(Object.fromEntries(_colorCacheMap))); }
+  catch {}
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let lastPrimary    = null;
 let lastSecondary  = null;
@@ -1172,18 +1188,15 @@ async function extractFromArt(artUrl, name = null) {
 
   // ── Album cache lookup ───────────────────────────────────────────────────────
   if (cacheEnabled) {
-    try {
-      const cache = JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}');
-      if (cache[artUrl]) {
-        if (stale()) return;
-        const cached = cache[artUrl];
-        document.body.classList.remove('extracting');
-        showResult(cached, { fromSync: true, name });
-        const useSecondary = loadPreferSec();
-        await maybeSendLight(useSecondary && cached.secondary ? cached.secondary.hex : cached.hex);
-        return;
-      }
-    } catch {}
+    const cached = cacheGet(artUrl);
+    if (cached) {
+      if (stale()) return;
+      document.body.classList.remove('extracting');
+      showResult(cached, { fromSync: true, name });
+      const useSecondary = loadPreferSec();
+      await maybeSendLight(useSecondary && cached.secondary ? cached.secondary.hex : cached.hex);
+      return;
+    }
   }
 
   try {
@@ -1216,15 +1229,7 @@ async function extractFromArt(artUrl, name = null) {
     if (stale()) return;
 
     // ── Write to album cache ─────────────────────────────────────────────────────
-    if (cacheEnabled) {
-      try {
-        const cache = JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}');
-        cache[artUrl] = colorData;
-        const keys = Object.keys(cache);
-        if (keys.length > 100) delete cache[keys[0]];
-        localStorage.setItem(LS_COLOR_CACHE, JSON.stringify(cache));
-      } catch {}
-    }
+    if (cacheEnabled) cacheSet(artUrl, colorData);
 
     showResult(colorData, { fromSync: true, name });
     const useSecondary = loadPreferSec();
