@@ -8,9 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=90" />
+  <link rel="stylesheet" href="/static/style.css?v=92" />
 </head>
 <body>
+  <canvas id="liquid-glass-bg" class="spline-bg" style="opacity:0"></canvas>
+  <!-- Orbs shown as fallback; faded out once WebGL canvas renders -->
   <div class="bg-orbs">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
@@ -518,6 +520,7 @@
 
   </div>
 
-  <script src="/static/app.js?v=85"></script>
+  <script src="/static/app.js?v=87"></script>
+  <script src="/static/liquid-glass.js"></script>
 </body>
 </html>
