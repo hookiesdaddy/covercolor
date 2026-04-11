@@ -20,7 +20,7 @@ from config import settings
 from tools.extract_color import extract_dominant_color
 
 # ── Shared HTTP client (one connection pool for the lifetime of the server) ───
-http_client: httpx.AsyncClient | None = None
+http_client: Optional[httpx.AsyncClient] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
