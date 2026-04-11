@@ -1632,25 +1632,31 @@ let lastActivity = Date.now();
 function enterFullscreen() {
   if (isFullscreen || fsExiting) return;
   isFullscreen = true;
-  document.body.classList.add('fullscreen-mode');
+  // Phase 1: fade chrome out (240ms)
+  document.body.classList.add('fs-fading');
+  // Phase 2: snap box around hero — chrome was invisible so no flash
+  setTimeout(() => {
+    document.body.classList.remove('fs-fading');
+    document.body.classList.add('fullscreen-mode');
+  }, 240);
 }
 
 function exitFullscreen() {
   if (!isFullscreen || fsExiting) return;
   fsExiting = true;
-  // Phase 1: play exit animation (hero fades/scales down, card stays expanded)
+  // Phase 1: hero slides out, chrome stays hidden
   document.body.classList.add('fullscreen-exiting');
   document.body.classList.remove('fullscreen-mode');
   setTimeout(() => {
-    // Phase 2: snap back to card + fade hero back in
+    // Phase 2: box snaps back, hero + chrome fade in together
     document.body.classList.remove('fullscreen-exiting');
     isFullscreen = false;
     document.body.classList.add('fullscreen-restore');
     setTimeout(() => {
       document.body.classList.remove('fullscreen-restore');
       fsExiting = false;
-    }, 320);
-  }, 340);
+    }, 300);
+  }, 300);
 }
 
 function resetActivity() {

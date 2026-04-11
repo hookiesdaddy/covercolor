@@ -797,22 +797,14 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .pref-rank { font-size: 0.7rem; color: var(--muted); font-family: 'SF Mono', monospace; }
 
 /* ── Fullscreen / display mode ─────────────────────────────────────────────── */
-@keyframes fs-enter {
-  from { opacity: 0; transform: scale(0.94) translateY(18px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
-}
-@keyframes fs-exit {
-  from { opacity: 1; transform: scale(1)    translateY(0); }
-  to   { opacity: 0; transform: scale(0.94) translateY(18px); }
-}
-@keyframes fs-restore {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
-/* Card keeps its glass styling — only chrome hides, box stays */
+/* Phase 1 — fade chrome out before the box snaps */
+body.fs-fading header          { opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
+body.fs-fading #result         { opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
+body.fs-fading .np-sync-badge  { opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
+body.fs-fading #options-btn    { opacity: 0; pointer-events: none; transition: opacity 0.22s ease; }
 
-/* Hide chrome — instant (no transition needed, hero animation covers it) */
+/* Phase 2 — box snaps around hero (chrome was already invisible) */
 body.fullscreen-mode header,
 body.fullscreen-mode #result,
 body.fullscreen-mode #options-panel,
@@ -824,27 +816,21 @@ body.fullscreen-mode #reload-hint { display: none !important; }
 
 body.fullscreen-mode #main-view { gap: 0; }
 
-/* Hero animation — enter */
-body.fullscreen-mode .np-hero {
-  padding: 0.5rem 0 0;
-  gap: 1.25rem;
-  animation: fs-enter 0.4s cubic-bezier(0.25,0.46,0.45,0.94) both;
-}
-/* Hero animation — exit (overrides enter) */
-body.fullscreen-exiting .np-hero {
-  animation: fs-exit 0.32s cubic-bezier(0.55,0.06,0.68,0.19) both !important;
-}
-/* Hero animation — restore normal view after exit */
-body.fullscreen-restore .np-hero {
-  animation: fs-restore 0.3s ease both;
-}
+/* Hero settles instantly — brief opacity dip (0.5→1, 160ms) masks the snap */
+@keyframes fs-settle  { from { opacity: 0.5; } to { opacity: 1; } }
+body.fullscreen-mode .np-hero { padding: 0.5rem 0 0; gap: 1.25rem; animation: fs-settle 0.16s ease both; }
 
-/* Art scales up */
-body.fullscreen-mode .np-art-wrap { width: 240px; height: 240px; margin-bottom: 0; }
-body.fullscreen-mode .np-art      { width: 240px; height: 240px; border-radius: 24px; }
-body.fullscreen-mode .np-art-placeholder svg { width: 52px; height: 52px; }
+/* Exit — hero slides down and fades, chrome hidden */
+@keyframes fs-exit { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(14px); } }
+body.fullscreen-exiting .np-hero { animation: fs-exit 0.28s cubic-bezier(0.4,0,1,1) both !important; }
+body.fullscreen-exiting header,
+body.fullscreen-exiting .np-sync-badge,
+body.fullscreen-exiting #options-btn { opacity: 0 !important; pointer-events: none; }
 
-/* Text scales up */
-body.fullscreen-mode .np-title  { font-size: 1.4rem; max-width: 90%; }
-body.fullscreen-mode .np-artist { font-size: 1rem; }
-body.fullscreen-mode .playback-controls { margin-top: 0.25rem; }
+/* Restore — hero and chrome fade back in together */
+@keyframes fs-restore  { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes chrome-in   { from { opacity: 0; } to { opacity: 1; } }
+body.fullscreen-restore .np-hero   { animation: fs-restore 0.28s ease both; }
+body.fullscreen-restore header      { animation: chrome-in  0.28s ease both; }
+body.fullscreen-restore .np-sync-badge,
+body.fullscreen-restore #options-btn { animation: chrome-in 0.28s ease both; }
