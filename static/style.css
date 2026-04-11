@@ -807,10 +807,11 @@ body.fullscreen-mode #result,
 body.fullscreen-mode #options-panel,
 body.fullscreen-mode #options-btn,
 body.fullscreen-mode .controls-bar,
-body.fullscreen-mode .np-sync-badge,
 body.fullscreen-mode #no-service,
 body.fullscreen-mode #error,
 body.fullscreen-mode #reload-hint { display: none !important; }
 
+/* Badge stays in layout (no shift) but is invisible */
+body.fullscreen-mode .np-sync-badge { visibility: hidden; }
+
 body.fullscreen-mode #main-view { gap: 0; }
-body.fullscreen-mode .np-hero   { padding: 0.5rem 0 0; gap: 1.25rem; }
