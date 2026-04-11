@@ -1844,7 +1844,6 @@ function enterAmbient() {
   if (isAmbient) return;
   if (isFullscreen) exitFullscreen();
   isAmbient = true;
-  window._ambientTarget = 1.0; // start color deepening immediately
   syncAmbientTrackInfo();
   const card = document.querySelector('.card');
   card.style.transition = 'opacity 380ms ease, transform 380ms ease';
@@ -1860,7 +1859,6 @@ function enterAmbient() {
 function exitAmbient() {
   if (!isAmbient) return;
   isAmbient = false;
-  window._ambientTarget = 0.0; // start color returning immediately
   if (ambientOverlay) ambientOverlay.classList.remove('visible');
   document.body.classList.remove('ambient-mode');
   const card = document.querySelector('.card');
