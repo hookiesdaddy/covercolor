@@ -36,6 +36,7 @@ const settingsBack      = document.getElementById('settings-back');
 // History
 const historyView       = document.getElementById('history-view');
 const historyBtn        = document.getElementById('history-btn');
+const fullscreenBtn     = document.getElementById('fullscreen-btn');
 const historyBack       = document.getElementById('history-back');
 const historyList       = document.getElementById('history-list');
 const historyClearBtn   = document.getElementById('history-clear-btn');
@@ -755,6 +756,10 @@ function hexToRgb(hex) {
 historyBtn.addEventListener('click', () => {
   showView(historyView, mainView, 'forward');
   renderHistory();
+});
+if (fullscreenBtn) fullscreenBtn.addEventListener('click', () => {
+  lastActivity = 0; // make idle check trigger immediately
+  enterFullscreen();
 });
 historyBack.addEventListener('click', () => showView(mainView, historyView, 'back'));
 historyClearBtn.addEventListener('click', () => {
