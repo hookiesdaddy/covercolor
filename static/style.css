@@ -636,6 +636,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .poll-rate-control { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
 .poll-rate-control input[type="range"] { width: 80px; accent-color: var(--accent); cursor: pointer; }
 #poll-rate-value { font-size: 0.8rem; color: var(--muted); min-width: 2.2rem; text-align: right; }
+#fullscreen-delay-value { font-size: 0.8rem; color: var(--muted); min-width: 2.8rem; text-align: right; }
 
 /* ── Idle behavior select ──────────────────────────────────────────────────── */
 .idle-behavior-select {
@@ -781,3 +782,61 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .pref-swatch { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
 .pref-name { font-size: 0.85rem; color: var(--text-secondary); flex: 1; }
 .pref-rank { font-size: 0.7rem; color: var(--muted); font-family: 'SF Mono', monospace; }
+
+/* ── Fullscreen / display mode ─────────────────────────────────────────────── */
+body.fullscreen-mode .card {
+  max-width: 100%;
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  overflow: visible;
+}
+body.fullscreen-mode .card::before,
+body.fullscreen-mode .card::after { display: none; }
+body.fullscreen-mode header,
+body.fullscreen-mode #result,
+body.fullscreen-mode #options-panel,
+body.fullscreen-mode #no-service,
+body.fullscreen-mode #error,
+body.fullscreen-mode #reload-hint { display: none !important; }
+body.fullscreen-mode #main-view {
+  height: 100%;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+}
+body.fullscreen-mode .np-hero {
+  padding: 0;
+  gap: 1.5rem;
+}
+body.fullscreen-mode .np-art-wrap {
+  width: 280px;
+  height: 280px;
+  margin-bottom: 0;
+}
+body.fullscreen-mode .np-art {
+  width: 280px;
+  height: 280px;
+  border-radius: 28px;
+}
+body.fullscreen-mode .np-art-placeholder svg { width: 60px; height: 60px; }
+body.fullscreen-mode .np-title {
+  font-size: 1.65rem;
+  max-width: 80vw;
+}
+body.fullscreen-mode .np-artist {
+  font-size: 1.1rem;
+}
+body.fullscreen-mode .np-sync-badge {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+body.fullscreen-mode .playback-controls { margin-top: 0.5rem; }

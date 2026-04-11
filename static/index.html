@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=81" />
+  <link rel="stylesheet" href="/static/style.css?v=82" />
 </head>
 <body>
   <div class="bg-orbs">
@@ -246,6 +246,22 @@
 
         <!-- Category: App -->
         <p class="options-category">App</p>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              Fullscreen after
+            </span>
+            <span class="poll-rate-desc">Auto-enters display mode when idle</span>
+          </div>
+          <div class="poll-rate-control">
+            <input type="range" id="fullscreen-delay-slider" min="0" max="4" step="1" value="0" />
+            <span id="fullscreen-delay-value">Off</span>
+          </div>
+        </div>
 
         <label class="toggle-row">
           <span class="toggle-label">
@@ -492,6 +508,6 @@
 
   </div>
 
-  <script src="/static/app.js?v=77"></script>
+  <script src="/static/app.js?v=78"></script>
 </body>
 </html>

@@ -103,6 +103,8 @@ const govLanSection     = document.getElementById('govee-lan-section');
 const govDiscoverBtn    = document.getElementById('govee-discover-btn');
 const govLanStatus      = document.getElementById('govee-lan-status');
 const govLanChecklist   = document.getElementById('govee-lan-checklist');
+const fullscreenSlider  = document.getElementById('fullscreen-delay-slider');
+const fullscreenDelayVal= document.getElementById('fullscreen-delay-value');
 
 // ── Color families ────────────────────────────────────────────────────────────
 const DEFAULT_FAMILIES = [
@@ -197,6 +199,9 @@ const LS_GOVEE_USE_LAN      = 'covercolor_govee_use_lan';      // bool — prefe
 const LS_GOVEE_LAN_DEVICES  = 'covercolor_govee_lan_devices';  // [{ip,device,sku,name}]
 const LS_GOVEE_LAN_SELECTED = 'covercolor_govee_lan_selected'; // [{ip,device,sku,name}] subset
 const LS_DEVICE_ROLES      = 'covercolor_device_roles';       // {deviceId: 'primary'|'secondary'|'off'}
+const LS_FULLSCREEN_DELAY  = 'covercolor_fullscreen_delay';   // index 0-4 into FULLSCREEN_SNAPS
+const FULLSCREEN_SNAPS     = [0, 60, 120, 300, 600];          // seconds (0 = off)
+const FULLSCREEN_LABELS    = ['Off', '1 min', '2 min', '5 min', '10 min'];
 const HISTORY_MAX       = 30;
 
 const loadApiKey       = () => localStorage.getItem(LS_KEY) || '';
@@ -1612,6 +1617,62 @@ npSyncBadge.addEventListener('click', () => {
   updateMusicUI();
 });
 npSyncBadge.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') npSyncBadge.click(); });
+
+// ── Fullscreen / display mode ─────────────────────────────────────────────────
+let isFullscreen = false;
+let lastActivity = Date.now();
+
+function enterFullscreen() {
+  if (isFullscreen) return;
+  isFullscreen = true;
+  document.body.classList.add('fullscreen-mode');
+}
+
+function exitFullscreen() {
+  if (!isFullscreen) return;
+  isFullscreen = false;
+  document.body.classList.remove('fullscreen-mode');
+}
+
+function resetActivity() {
+  lastActivity = Date.now();
+  if (isFullscreen) exitFullscreen();
+}
+
+function checkFullscreenTimer() {
+  const idx   = parseInt(localStorage.getItem(LS_FULLSCREEN_DELAY) || '0', 10);
+  const delay = FULLSCREEN_SNAPS[idx] || 0;
+  if (!delay || isFullscreen) return;
+  if (Date.now() - lastActivity >= delay * 1000) enterFullscreen();
+}
+
+// Init slider from saved value
+(function initFullscreenSlider() {
+  const saved = parseInt(localStorage.getItem(LS_FULLSCREEN_DELAY) || '0', 10);
+  if (fullscreenSlider) fullscreenSlider.value = Math.min(saved, FULLSCREEN_SNAPS.length - 1);
+  if (fullscreenDelayVal) fullscreenDelayVal.textContent = FULLSCREEN_LABELS[saved] ?? 'Off';
+})();
+
+if (fullscreenSlider) {
+  fullscreenSlider.addEventListener('input', () => {
+    const idx = parseInt(fullscreenSlider.value, 10);
+    fullscreenDelayVal.textContent = FULLSCREEN_LABELS[idx];
+    localStorage.setItem(LS_FULLSCREEN_DELAY, String(idx));
+  });
+}
+
+// Click / keydown / touch → reset activity and exit fullscreen
+['click', 'keydown', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, resetActivity, { passive: true })
+);
+// Mouse move alone only resets timer — doesn't exit (prevents accidental exit)
+document.addEventListener('mousemove', () => { lastActivity = Date.now(); }, { passive: true });
+
+// Escape always exits regardless of above
+document.addEventListener('keydown', e => { if (e.key === 'Escape') exitFullscreen(); }, { passive: true });
+
+// Check every 15 s
+setInterval(checkFullscreenTimer, 15000);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 // Force GPU recomposite for blurred orbs after first paint — fixes the boxy
