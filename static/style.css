@@ -510,13 +510,19 @@ header { display: flex; align-items: center; gap: 0.5rem; }
   border: 1px solid var(--border);
   box-shadow: inset 0 1px 0 var(--glass-specular);
 }
-.np-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; animation: np-pulse 1.8s ease-in-out infinite; }
-.np-hero.syncing .np-dot { background: #4ade80; }
-#np-sync-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
-.np-hero.syncing #np-sync-label { color: #4ade80; }
+.np-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.4s ease; }
+#np-sync-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; transition: color 0.4s ease; }
+/* Status colours */
+.np-sync-badge.status-green  .np-dot        { background: #4ade80; animation: np-pulse 1.8s ease-in-out infinite; }
+.np-sync-badge.status-green  #np-sync-label { color: #4ade80; }
+.np-sync-badge.status-orange .np-dot        { background: #fb923c; }
+.np-sync-badge.status-orange #np-sync-label { color: #fb923c; }
+.np-sync-badge.status-red    .np-dot        { background: #f87171; }
+.np-sync-badge.status-red    #np-sync-label { color: #f87171; }
+/* paused overrides any status colour */
+.np-sync-badge.paused .np-dot        { background: var(--muted) !important; animation: none !important; }
+.np-sync-badge.paused #np-sync-label { color: var(--muted) !important; }
 .np-sync-badge:hover { opacity: 0.75; transition: opacity 0.15s; }
-.np-sync-badge.paused .np-dot { background: var(--muted); animation: none; }
-.np-sync-badge.paused #np-sync-label { color: var(--muted); }
 .np-title { font-size: 1.05rem; font-weight: 700; color: var(--text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .np-artist { font-size: 0.85rem; color: var(--text-secondary); }
 .np-action-row { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }

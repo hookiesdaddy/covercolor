@@ -155,6 +155,16 @@ let lastSecondary  = null;
 let manualOverride = null; // 'primary' | 'secondary' | null
 let lastSentHex    = null; // last hex sent to Govee — skip if unchanged
 let idleActionSent = false; // true after idle behavior fired — reset on track detect
+let _goveeOk       = null; // null = never tried, true = last cmd OK, false = last cmd failed
+
+// ── Sync badge status ─────────────────────────────────────────────────────────
+// Single source of truth for the dot colour + label.
+// status: 'green' | 'orange' | 'grey' | 'red'
+function setSyncStatus(status, label) {
+  npSyncBadge.classList.remove('status-green', 'status-orange', 'status-grey', 'status-red');
+  npSyncBadge.classList.add(`status-${status}`);
+  npSyncLabel.textContent = label;
+}
 
 // ── LocalStorage ──────────────────────────────────────────────────────────────
 const LS_KEY            = 'colorpick_govee_key';
@@ -1040,7 +1050,7 @@ function updateMusicUI() {
   // Sync badge: visible when syncing is on; shows paused state
   npSyncBadge.classList.toggle('hidden', !syncOn);
   npSyncBadge.classList.toggle('paused', paused);
-  if (paused && syncOn) npSyncLabel.textContent = '⏸ Paused';
+  if (paused && syncOn) setSyncStatus('grey', '⏸ Paused');
 
   // Keep gradient visible when syncing and has colors
   if (syncOn && lastPrimary) result.classList.remove('hidden');
@@ -1070,23 +1080,22 @@ async function _lfmPollInner() {
           idleActionSent = false;
           updateMusicUI();
           document.body.classList.add('extracting');
-          npSyncLabel.textContent = 'Syncing…';
+          setSyncStatus('grey', 'Syncing…');
           await extractFromArt(track.art, `${track.title} — ${track.artist}`);
         } else {
-          npHero.classList.toggle('syncing', track.isLive);
-          npSyncLabel.textContent = track.isLive ? 'Synced ✓' : 'Paused';
+          setSyncStatus(track.isLive ? (_goveeOk === false ? 'orange' : 'green') : 'grey',
+                        track.isLive ? (_goveeOk === false ? 'Lights offline' : 'Synced ✓') : 'Paused');
         }
         return;
       } else {
-        npHero.classList.remove('syncing');
         npTitle.textContent = 'Nothing playing';
         npArtist.textContent = '';
-        npSyncLabel.textContent = 'Waiting…';
+        setSyncStatus('grey', 'Waiting…');
         await triggerIdleBehavior();
         return;
       }
     } catch (e) {
-      npSyncLabel.textContent = 'Spotify error';
+      setSyncStatus('red', 'Spotify error');
     }
   }
 
@@ -1096,10 +1105,9 @@ async function _lfmPollInner() {
   try {
     const track = await lfmGetNowPlaying(user, key);
     if (!track) {
-      npHero.classList.remove('syncing');
       npTitle.textContent     = 'Nothing playing';
       npArtist.textContent    = 'Is your scrobbler running?';
-      npSyncLabel.textContent = 'Waiting…';
+      setSyncStatus('grey', 'Waiting…');
       await triggerIdleBehavior();
       return;
     }
@@ -1115,19 +1123,18 @@ async function _lfmPollInner() {
       // New track (or first load) — extract every time
       lfmLastTrackKey = trackKey;
       idleActionSent = false;
-      updateMusicUI(); // reveal reload/auto buttons now that a track is present
+      updateMusicUI();
       document.body.classList.add('extracting');
-      npHero.classList.remove('syncing');
-      npSyncLabel.textContent = track.isLive ? 'Syncing…' : 'Extracting…';
+      setSyncStatus('grey', track.isLive ? 'Syncing…' : 'Extracting…');
       await extractFromArt(track.art, `${track.title} — ${track.artist}`);
     } else {
       // Same track — just keep badge current
-      npHero.classList.toggle('syncing', track.isLive);
-      npSyncLabel.textContent = track.isLive ? 'Synced ✓' : 'Last played';
+      setSyncStatus(track.isLive ? (_goveeOk === false ? 'orange' : 'green') : 'grey',
+                    track.isLive ? (_goveeOk === false ? 'Lights offline' : 'Synced ✓') : 'Last played');
     }
   } catch (e) {
     npHero.classList.remove('syncing');
-    npSyncLabel.textContent = 'Last.fm error — check credentials';
+    setSyncStatus('red', 'Connection error');
   }
 }
 
@@ -1135,7 +1142,7 @@ async function _lfmPollInner() {
 async function extractFromArt(artUrl, name = null) {
   const syncOn = localStorage.getItem(LS_LFM_SYNC) === 'true';
   if (!artUrl) {
-    if (syncOn) npSyncLabel.textContent = 'No artwork available';
+    if (syncOn) setSyncStatus('grey', 'No artwork');
     return;
   }
 
@@ -1169,9 +1176,15 @@ async function extractFromArt(artUrl, name = null) {
         const fd2 = new FormData();
         fd2.append('hex', transformed);
         fd2.append('devices', JSON.stringify(lanDevs));
-        await fetch('/set-light-lan', { method: 'POST', body: fd2, signal: abort.signal });
-        npHero.classList.add('syncing');
-        npSyncLabel.textContent = 'Synced ✓';
+        try {
+          await fetch('/set-light-lan', { method: 'POST', body: fd2, signal: abort.signal });
+          _goveeOk = true;
+          setSyncStatus('green', 'Synced ✓');
+        } catch (e) {
+          if (e.name === 'AbortError') return;
+          _goveeOk = false;
+          setSyncStatus('orange', 'Lights offline');
+        }
         return;
       }
       // Fall through to cloud if no LAN devices are configured
@@ -1181,9 +1194,15 @@ async function extractFromArt(artUrl, name = null) {
     fd2.append('hex', transformed);
     const sel = getSelectedDevices();
     if (sel) fd2.append('selected_devices', JSON.stringify(sel));
-    await fetch('/set-light-hex', { method: 'POST', headers, body: fd2, signal: abort.signal });
-    npHero.classList.add('syncing');
-    npSyncLabel.textContent = 'Synced ✓';
+    try {
+      await fetch('/set-light-hex', { method: 'POST', headers, body: fd2, signal: abort.signal });
+      _goveeOk = true;
+      setSyncStatus('green', 'Synced ✓');
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      _goveeOk = false;
+      setSyncStatus('orange', 'Lights offline');
+    }
   }
 
   // ── Album cache lookup ───────────────────────────────────────────────────────
@@ -1238,7 +1257,7 @@ async function extractFromArt(artUrl, name = null) {
   } catch (e) {
     if (e.name === 'AbortError') return; // cancelled cleanly — no UI update
     document.body.classList.remove('extracting');
-    if (syncOn) npSyncLabel.textContent = `Sync error: ${e.message || 'failed'}`;
+    if (syncOn) setSyncStatus('red', 'Sync error');
   }
 }
 
