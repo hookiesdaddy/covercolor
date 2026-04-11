@@ -1097,6 +1097,7 @@ async function _lfmPollInner() {
           updateMusicUI();
           document.body.classList.add('extracting');
           setSyncStatus('grey', 'Syncing…');
+          spotifyFetchBpm(track.id);
           await extractFromArt(track.art, `${track.title} — ${track.artist}`);
         } else {
           setSyncStatus(track.isLive ? (_goveeOk === false ? 'orange' : 'green') : 'grey',
@@ -1107,6 +1108,7 @@ async function _lfmPollInner() {
         npTitle.textContent = 'Nothing playing';
         npArtist.textContent = '';
         setSyncStatus('grey', 'Waiting…');
+        applyBpm(0);
         await triggerIdleBehavior();
         return;
       }
@@ -1505,7 +1507,50 @@ async function spotifyGetNowPlaying() {
     artist: data.item.artists.map(a => a.name).join(', '),
     art: data.item.album.images[0]?.url || '',
     isLive: data.is_playing,
+    id: data.item.id,
   };
+}
+
+const LS_BEAT_PULSE  = 'covercolor_beat_pulse';
+const beatPulseToggle = document.getElementById('beat-pulse-toggle');
+if (beatPulseToggle) {
+  beatPulseToggle.checked = localStorage.getItem(LS_BEAT_PULSE) !== 'false';
+  beatPulseToggle.addEventListener('change', () => {
+    localStorage.setItem(LS_BEAT_PULSE, beatPulseToggle.checked ? 'true' : 'false');
+    if (!beatPulseToggle.checked) applyBpm(0);
+  });
+}
+
+function applyBpm(rawBpm) {
+  const enabled = localStorage.getItem(LS_BEAT_PULSE) !== 'false';
+  const bpm = enabled ? (rawBpm || 0) : 0;
+
+  // Liquid glass orb pulse
+  window._trackBpm = bpm;
+
+  // Glow mode orb pulse
+  const orbs = document.querySelector('.bg-orbs');
+  if (orbs) {
+    if (bpm > 0) {
+      orbs.style.setProperty('--beat-dur', (60 / bpm).toFixed(3) + 's');
+      orbs.classList.add('beating');
+    } else {
+      orbs.classList.remove('beating');
+    }
+  }
+}
+
+async function spotifyFetchBpm(trackId) {
+  try {
+    const token = await getSpotifyToken();
+    if (!token || !trackId) return;
+    const resp = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    applyBpm(data.tempo || 0);
+  } catch { /* non-fatal */ }
 }
 
 function spotifyDisconnect() {

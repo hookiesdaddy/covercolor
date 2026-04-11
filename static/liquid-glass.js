@@ -44,6 +44,7 @@
     uniform vec2  u_res;
     uniform vec3  u_primary;    /* album primary color   */
     uniform vec3  u_secondary;  /* album secondary color */
+    uniform float u_bpm;        /* beats per minute (0 = no pulse) */
 
     /* ── Value noise ─────────────────────────────────────────────── */
     float hash(vec3 p) {
@@ -67,9 +68,10 @@
     /* ── Blob SDF ────────────────────────────────────────────────── */
     float sdf(vec3 p) {
       float t = u_time;
-      vec3 q = p + (fbm(p*1.1 + vec3(t*0.12,t*0.09,t*0.14)) - 0.5) * 0.60;
-      q      += (fbm(q*1.7  + vec3(t*0.07,t*0.11,t*0.06)) - 0.5) * 0.22;
-      return length(q) - 1.05;
+      vec3 q = p + (fbm(p*1.1 + vec3(t*0.06,t*0.045,t*0.07)) - 0.5) * 0.60;
+      q      += (fbm(q*1.7  + vec3(t*0.035,t*0.055,t*0.03)) - 0.5) * 0.22;
+      float beat = u_bpm > 0.0 ? pow(max(sin(u_time * u_bpm / 60.0 * 6.2832), 0.0), 3.0) * 0.09 : 0.0;
+      return length(q) - 1.05 - beat;
     }
 
     /* ── Sphere-trace ────────────────────────────────────────────── */
@@ -138,8 +140,8 @@
 
         /* Hue position on blob surface drives color sweep */
         float hue = dot(n, vec3(0.55, 0.80, 0.30))
-                  + vnoise(p * 2.2 + u_time * 0.07) * 0.45;
-        hue = fract(hue * 0.65 + u_time * 0.045);
+                  + vnoise(p * 2.2 + u_time * 0.035) * 0.45;
+        hue = fract(hue * 0.65 + u_time * 0.022);
 
         vec3 surf = palette(hue) * 2.0;
 
@@ -182,6 +184,7 @@
   const uRes      = gl.getUniformLocation(prog, 'u_res');
   const uPrimary  = gl.getUniformLocation(prog, 'u_primary');
   const uSecondary= gl.getUniformLocation(prog, 'u_secondary');
+  const uBpm      = gl.getUniformLocation(prog, 'u_bpm');
 
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
@@ -197,9 +200,12 @@
     ];
   }
 
+  // Ensure BPM is always 0 until a track explicitly sets it
+  window._trackBpm = 0;
+
   // Default colors when no track playing (rich purple / blue)
-  const DEFAULT_PRIMARY   = [0.48, 0.23, 0.93];
-  const DEFAULT_SECONDARY = [0.08, 0.42, 0.95];
+  const DEFAULT_PRIMARY   = [0.388, 0.400, 0.945]; /* logo purple #6366f1 (= --accent default)        */
+  const DEFAULT_SECONDARY = [0.925, 0.282, 0.600]; /* logo pink  #ec4899 (= --secondary-color default) */
 
   let curPrimary   = DEFAULT_PRIMARY.slice();
   let curSecondary = DEFAULT_SECONDARY.slice();
@@ -242,6 +248,7 @@
     gl.uniform2f(uRes,       canvas.width, canvas.height);
     gl.uniform3fv(uPrimary,  curPrimary);
     gl.uniform3fv(uSecondary,curSecondary);
+    gl.uniform1f(uBpm,       window._trackBpm || 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     rafId = requestAnimationFrame(draw);
   }

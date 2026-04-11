@@ -103,6 +103,8 @@ body {
   z-index: 0;
   pointer-events: none;
   display: block;
+  filter: blur(18px);
+  transform: scale(1.04); /* prevent edge halos from blur */
 }
 
 /* ── Background orbs (fade out once Spline loads) ───────────────────────────── */
@@ -132,11 +134,22 @@ body.bg-theme-liquid .spline-bg { display: block; }
 
 /* ── Extracting state ───────────────────────────────────────────────────────── */
 @keyframes orb-pulse {
-  0%, 100% { opacity: calc(var(--orb-opacity) * 0.35); transform: scale(1); }
-  50%       { opacity: calc(var(--orb-opacity) * 0.7);  transform: scale(1.06); }
+  0%, 100% { opacity: calc(var(--orb-opacity) * 0.35); transform: scale(1) translateZ(0); }
+  50%       { opacity: calc(var(--orb-opacity) * 0.7);  transform: scale(1.06) translateZ(0); }
 }
 body.extracting .orb { animation: orb-pulse 1.6s ease-in-out infinite; }
 body.extracting .orb-2 { animation-delay: 0.5s; }
+
+/* ── Beat pulse (glow mode) ─────────────────────────────────────────────────── */
+@keyframes orb-beat {
+  0%   { transform: scale(1) translateZ(0);    opacity: var(--orb-opacity); }
+  12%  { transform: scale(1.07) translateZ(0); opacity: calc(var(--orb-opacity) * 1.4); }
+  100% { transform: scale(1) translateZ(0);    opacity: var(--orb-opacity); }
+}
+.bg-orbs.beating .orb {
+  animation: orb-beat var(--beat-dur, 0.5s) ease-out infinite;
+}
+.bg-orbs.beating .orb-2 { animation-delay: calc(var(--beat-dur, 0.5s) * 0.05); }
 body.extracting .color-gradient-box {
   background: linear-gradient(135deg, #3a3a3a, #555555) !important;
   transition: background 0.4s ease;
