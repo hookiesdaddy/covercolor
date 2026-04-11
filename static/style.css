@@ -573,6 +573,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .settings-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .section-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 .section-desc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+.app-version { font-size: 0.68rem; color: var(--muted); text-align: center; margin: 0.5rem 0 0; opacity: 0.6; }
 
 /* ── Theme toggle row ────────────────────────────────────────────────────────── */
 .theme-toggle-row {
