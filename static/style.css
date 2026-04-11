@@ -810,24 +810,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Card expands edge-to-edge — CSS transitions handle the smooth expand/collapse */
-body.fullscreen-mode .card,
-body.fullscreen-exiting .card {
-  max-width: 100%;
-  width: 100vw;
-  border-radius: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
-  border: none;
-  padding: 2rem;
-  overflow: visible;
-}
-body.fullscreen-mode .card::before,
-body.fullscreen-mode .card::after,
-body.fullscreen-exiting .card::before,
-body.fullscreen-exiting .card::after { display: none; }
+/* Card keeps its glass styling — only chrome hides, box stays */
 
 /* Hide chrome — instant (no transition needed, hero animation covers it) */
 body.fullscreen-mode header,
@@ -839,19 +822,16 @@ body.fullscreen-mode #no-service,
 body.fullscreen-mode #error,
 body.fullscreen-mode #reload-hint { display: none !important; }
 
-body.fullscreen-mode #main-view,
-body.fullscreen-exiting #main-view { gap: 0; }
+body.fullscreen-mode #main-view { gap: 0; }
 
 /* Hero animation — enter */
 body.fullscreen-mode .np-hero {
-  padding: 0;
-  gap: 1.5rem;
+  padding: 0.5rem 0 0;
+  gap: 1.25rem;
   animation: fs-enter 0.4s cubic-bezier(0.25,0.46,0.45,0.94) both;
 }
 /* Hero animation — exit (overrides enter) */
 body.fullscreen-exiting .np-hero {
-  padding: 0;
-  gap: 1.5rem;
   animation: fs-exit 0.32s cubic-bezier(0.55,0.06,0.68,0.19) both !important;
 }
 /* Hero animation — restore normal view after exit */
@@ -860,17 +840,11 @@ body.fullscreen-restore .np-hero {
 }
 
 /* Art scales up */
-body.fullscreen-mode .np-art-wrap,
-body.fullscreen-exiting .np-art-wrap { width: 280px; height: 280px; margin-bottom: 0; }
-body.fullscreen-mode .np-art,
-body.fullscreen-exiting .np-art     { width: 280px; height: 280px; border-radius: 28px; }
-body.fullscreen-mode .np-art-placeholder svg,
-body.fullscreen-exiting .np-art-placeholder svg { width: 60px; height: 60px; }
+body.fullscreen-mode .np-art-wrap { width: 240px; height: 240px; margin-bottom: 0; }
+body.fullscreen-mode .np-art      { width: 240px; height: 240px; border-radius: 24px; }
+body.fullscreen-mode .np-art-placeholder svg { width: 52px; height: 52px; }
 
 /* Text scales up */
-body.fullscreen-mode .np-title,
-body.fullscreen-exiting .np-title   { font-size: 1.65rem; max-width: 80vw; }
-body.fullscreen-mode .np-artist,
-body.fullscreen-exiting .np-artist  { font-size: 1.1rem; }
-body.fullscreen-mode .playback-controls,
-body.fullscreen-exiting .playback-controls { margin-top: 0.5rem; }
+body.fullscreen-mode .np-title  { font-size: 1.4rem; max-width: 90%; }
+body.fullscreen-mode .np-artist { font-size: 1rem; }
+body.fullscreen-mode .playback-controls { margin-top: 0.25rem; }
