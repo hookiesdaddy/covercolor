@@ -1603,6 +1603,12 @@ npSyncBadge.addEventListener('click', () => {
 npSyncBadge.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') npSyncBadge.click(); });
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+// Populate version from server so config.py is the single source of truth
+fetch('/health').then(r => r.json()).then(d => {
+  const el = document.getElementById('app-version');
+  if (el && d.version) el.textContent = `covercolor v${d.version}`;
+}).catch(() => {});
+
 buildPrefsList();
 updateServiceCards();
 updateSpotifyUI();
