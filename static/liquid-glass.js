@@ -279,7 +279,7 @@
     gl.uniform2f(uRes,       canvas.width, canvas.height);
     gl.uniform3fv(uPrimary,  curPrimary);
     gl.uniform3fv(uSecondary,curSecondary);
-    curAmbient = lerp(curAmbient, document.body.classList.contains('ambient-mode') ? 1.0 : 0.0, 0.045);
+    curAmbient = lerp(curAmbient, window._ambientTarget || 0.0, 0.03);
     gl.uniform1f(uBpm,       window._trackBpm || 0);
     gl.uniform1f(uLight,     document.body.classList.contains('theme-light') ? 1.0 : 0.0);
     gl.uniform1f(uAmbient,   curAmbient);
