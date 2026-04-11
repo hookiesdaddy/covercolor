@@ -245,6 +245,7 @@
   let curSecondary = DEFAULT_SECONDARY.slice();
   let tgtPrimary   = DEFAULT_PRIMARY.slice();
   let tgtSecondary = DEFAULT_SECONDARY.slice();
+  let curAmbient   = 0.0;
 
   function updateTargets() {
     const style = getComputedStyle(document.documentElement);
@@ -278,9 +279,10 @@
     gl.uniform2f(uRes,       canvas.width, canvas.height);
     gl.uniform3fv(uPrimary,  curPrimary);
     gl.uniform3fv(uSecondary,curSecondary);
+    curAmbient = lerp(curAmbient, document.body.classList.contains('ambient-mode') ? 1.0 : 0.0, 0.045);
     gl.uniform1f(uBpm,       window._trackBpm || 0);
     gl.uniform1f(uLight,     document.body.classList.contains('theme-light') ? 1.0 : 0.0);
-    gl.uniform1f(uAmbient,   document.body.classList.contains('ambient-mode') ? 1.0 : 0.0);
+    gl.uniform1f(uAmbient,   curAmbient);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     rafId = requestAnimationFrame(draw);
   }
