@@ -1831,6 +1831,32 @@ updateMusicUI();
     return;
   }
 
+  // ── Background theme ─────────────────────────────────────────────────────────
+  const LS_BG_THEME = 'covercolor_bg_theme';
+  const bgOrbsBtn   = document.getElementById('bg-orbs-btn');
+  const bgLiquidBtn = document.getElementById('bg-liquid-btn');
+
+  function applyBgTheme(theme) {
+    document.body.classList.toggle('bg-theme-orbs',   theme === 'orbs');
+    document.body.classList.toggle('bg-theme-liquid',  theme === 'liquid');
+    if (bgOrbsBtn)   bgOrbsBtn.classList.toggle('active',   theme === 'orbs');
+    if (bgLiquidBtn) bgLiquidBtn.classList.toggle('active', theme === 'liquid');
+    // Signal liquid-glass.js to pause/resume its RAF loop
+    window._bgTheme = theme;
+  }
+
+  const savedBgTheme = localStorage.getItem(LS_BG_THEME) || 'liquid';
+  applyBgTheme(savedBgTheme);
+
+  if (bgOrbsBtn) bgOrbsBtn.addEventListener('click', () => {
+    localStorage.setItem(LS_BG_THEME, 'orbs');
+    applyBgTheme('orbs');
+  });
+  if (bgLiquidBtn) bgLiquidBtn.addEventListener('click', () => {
+    localStorage.setItem(LS_BG_THEME, 'liquid');
+    applyBgTheme('liquid');
+  });
+
   // ── Theme toggle ────────────────────────────────────────────────────────────
   const themeIconBtn  = document.getElementById('theme-icon-btn');
   const themeIconSun  = document.getElementById('theme-icon-sun');

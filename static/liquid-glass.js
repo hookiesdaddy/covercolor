@@ -225,6 +225,9 @@
   function lerp(a, b, t) { return a + (b - a) * t; }
 
   function draw() {
+    // Pause rendering when orbs theme is active
+    if (window._bgTheme === 'orbs') { rafId = requestAnimationFrame(draw); return; }
+
     // Re-read CSS vars every 30 frames (~0.5s) — reliable without MutationObserver
     if (frameCount++ % 30 === 0) updateTargets();
 

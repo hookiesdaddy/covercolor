@@ -112,6 +112,24 @@ body {
 .orb-1 { width: max(900px, 75vw); height: max(900px, 75vh); background: radial-gradient(circle, var(--accent), transparent 55%); top: -45vh; left: -35vw; transition: opacity 0.3s ease, background 0.6s ease; }
 .orb-2 { width: max(800px, 70vw); height: max(800px, 70vh); background: radial-gradient(circle, var(--secondary-color), transparent 55%); bottom: -40vh; right: -30vw; transition: opacity 0.3s ease, background 0.6s ease; }
 
+/* ── Background theme overrides ─────────────────────────────────────────────── */
+/* Orbs mode: hide WebGL canvas, always show orbs */
+body.bg-theme-orbs .spline-bg { display: none; }
+body.bg-theme-orbs .bg-orbs { opacity: 1 !important; }
+/* Liquid mode: let spline-ready fade handle it (default behavior) */
+body.bg-theme-liquid .spline-bg { display: block; }
+
+/* ── Background theme pill buttons ─────────────────────────────────────────── */
+.bg-theme-pills { display: flex; gap: 0.25rem; }
+.bg-theme-pill {
+  font-size: 0.75rem; font-weight: 500; padding: 0.25rem 0.65rem;
+  border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary); cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bg-theme-pill:hover { background: var(--subtle); color: var(--text-primary); }
+.bg-theme-pill.active { background: rgba(var(--accent-rgb, 99,102,241), 0.15); color: var(--accent); border-color: var(--accent); }
+
 /* ── Extracting state ───────────────────────────────────────────────────────── */
 @keyframes orb-pulse {
   0%, 100% { opacity: calc(var(--orb-opacity) * 0.35); transform: scale(1); }

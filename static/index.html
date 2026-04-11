@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=92" />
+  <link rel="stylesheet" href="/static/style.css?v=93" />
 </head>
 <body>
   <canvas id="liquid-glass-bg" class="spline-bg" style="opacity:0"></canvas>
@@ -277,6 +277,22 @@
             <span class="toggle-slider"></span>
           </div>
         </label>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+              Background
+            </span>
+            <span class="poll-rate-desc">Visual style for the background</span>
+          </div>
+          <div class="bg-theme-pills">
+            <button class="bg-theme-pill" id="bg-orbs-btn" data-bg="orbs">Orbs</button>
+            <button class="bg-theme-pill" id="bg-liquid-btn" data-bg="liquid">Liquid Glass</button>
+          </div>
+        </div>
       </div>
 
       <div id="error" class="error hidden"></div>
@@ -520,7 +536,7 @@
 
   </div>
 
-  <script src="/static/app.js?v=87"></script>
+  <script src="/static/app.js?v=88"></script>
   <script src="/static/liquid-glass.js"></script>
 </body>
 </html>
