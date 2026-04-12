@@ -42,6 +42,7 @@
 }
 
 /* ── Manual theme overrides (beat the media query) ──────────────────────────── */
+/* Dark matches :root defaults — only need to re-declare to override light system pref */
 body.theme-dark {
   --bg: #0a0a0f;
   --card-bg: rgba(18,18,28,0.55);
@@ -57,11 +58,12 @@ body.theme-dark {
   --glass-specular: rgba(255,255,255,0.12);
   --orb-opacity: 0.5;
 }
+/* Light overrides — slightly different bg than media query to be intentional */
 body.theme-light {
   --bg: #d8d8e8;
-  --card-bg: rgba(255,255,255,0.38);
-  --border: rgba(255,255,255,0.75);
-  --border-hover: rgba(255,255,255,0.95);
+  --card-bg: rgba(255,255,255,0.45);
+  --border: rgba(255,255,255,0.70);
+  --border-hover: rgba(255,255,255,0.90);
   --text: #111111;
   --text-secondary: #555555;
   --muted: #888888;
@@ -564,7 +566,9 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 /* paused overrides any status colour */
 .np-sync-badge.paused .np-dot        { background: var(--muted) !important; animation: none !important; }
 .np-sync-badge.paused #np-sync-label { color: var(--muted) !important; }
-.np-sync-badge:hover { opacity: 0.75; transition: opacity 0.15s; }
+.np-sync-badge { cursor: pointer; transition: opacity 0.15s, transform 0.15s; }
+.np-sync-badge:hover { opacity: 0.75; transform: scale(1.04); }
+.np-sync-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 20px; }
 .np-title { font-size: 1.05rem; font-weight: 700; color: var(--text); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: font-size 0.4s cubic-bezier(0.4,0,0.2,1), max-width 0.4s ease; }
 .np-artist { font-size: 0.85rem; color: var(--text-secondary); transition: font-size 0.4s cubic-bezier(0.4,0,0.2,1); }
 .np-action-row { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
@@ -755,6 +759,8 @@ header { display: flex; align-items: center; gap: 0.5rem; }
   transition: border-color 0.15s, background 0.15s;
 }
 .history-item:hover { border-color: var(--border-hover); background: var(--subtle); }
+@keyframes history-flash { 0%,100% { background: var(--input-bg); } 40% { background: rgba(var(--accent-rgb),0.18); border-color: rgba(var(--accent-rgb),0.5); } }
+.history-item.history-flash { animation: history-flash 0.3s ease; }
 .history-item-main {
   display: flex; align-items: center; gap: 0.85rem;
   padding: 0.65rem 0.85rem; cursor: pointer;
@@ -827,7 +833,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .color-prefs-list { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.5rem; }
 .pref-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.85rem; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); cursor: grab; user-select: none; transition: background 0.15s, border-color 0.15s, opacity 0.15s; }
 .pref-item:active { cursor: grabbing; }
-.pref-item.drag-over { border-color: rgba(var(--accent-rgb), 0.5); background: rgba(var(--accent-rgb), 0.06); }
+.pref-item.drag-over { border-color: rgba(var(--accent-rgb), 0.7); background: rgba(var(--accent-rgb), 0.08); box-shadow: 0 -2px 0 0 rgba(var(--accent-rgb), 0.8); }
 .pref-item.dragging { opacity: 0.35; }
 .drag-handle { color: var(--muted); flex-shrink: 0; display: flex; }
 .drag-handle svg { width: 14px; height: 14px; }
@@ -931,3 +937,9 @@ body.theme-light .ambient-controls {
 .ambient-track-info:hover .ambient-title { color: var(--text); }
 /* Paused state — dim title to signal pause */
 .ambient-track-info.paused .ambient-title { color: var(--muted); }
+
+/* Narrow viewport fix for ambient overlay */
+@media (max-width: 360px) {
+  #ambient-overlay { bottom: 1.2rem; }
+  .ambient-title, .ambient-artist { max-width: 48vw; }
+}

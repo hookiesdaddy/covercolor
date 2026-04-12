@@ -63,7 +63,7 @@ const goveeConfig       = document.getElementById('govee-config');
 const goveeBadge        = document.getElementById('govee-badge');
 const lastfmConfig      = document.getElementById('lastfm-config');
 const spotifyConfig     = document.getElementById('spotify-config');
-const lastfmBadge       = document.getElementById('lastfm-badge');
+const lastfmBadge       = document.getElementById('applemusic-badge');
 const spotifyBadge      = document.getElementById('spotify-badge');
 
 // Spotify
@@ -169,23 +169,23 @@ function setSyncStatus(status, label) {
 }
 
 // ── LocalStorage ──────────────────────────────────────────────────────────────
-const LS_KEY            = 'colorpick_govee_key';
-const LS_PREFS          = 'colorpick_color_prefs';
-const LS_PREFER_SEC     = 'colorpick_prefer_secondary';
-const LS_SKIP_NEUTRAL   = 'colorpick_skip_neutrals';
-const LS_LFM_USER       = 'colorpick_lfm_user';
-const LS_LFM_KEY        = 'colorpick_lfm_key';
-const LS_LFM_SYNC       = 'colorpick_lfm_sync';
-const LS_HISTORY        = 'colorpick_history';
-const LS_REMEMBER_OPTS      = 'colorpick_remember_opts';
-const LS_BRIGHTER           = 'colorpick_brighter';
-const LS_USE_PREFS          = 'colorpick_use_prefs';
-const LS_SPOTIFY_CLIENT_ID  = 'colorpick_spotify_client_id';
-const LS_SPOTIFY_TOKEN      = 'colorpick_spotify_token';
-const LS_SPOTIFY_REFRESH    = 'colorpick_spotify_refresh';
-const LS_SPOTIFY_EXPIRES    = 'colorpick_spotify_expires';
-const LS_SPOTIFY_PLAYBACK   = 'colorpick_spotify_playback';
-const LS_ACTIVE_SERVICE     = 'colorpick_active_service'; // 'lastfm' | 'spotify'
+const LS_KEY            = 'covercolor_govee_key';
+const LS_PREFS          = 'covercolor_color_prefs';
+const LS_PREFER_SEC     = 'covercolor_prefer_secondary';
+const LS_SKIP_NEUTRAL   = 'covercolor_skip_neutrals';
+const LS_LFM_USER       = 'covercolor_lfm_user';
+const LS_LFM_KEY        = 'covercolor_lfm_key';
+const LS_LFM_SYNC       = 'covercolor_lfm_sync';
+const LS_HISTORY        = 'covercolor_history';
+const LS_REMEMBER_OPTS      = 'covercolor_remember_opts';
+const LS_BRIGHTER           = 'covercolor_brighter';
+const LS_USE_PREFS          = 'covercolor_use_prefs';
+const LS_SPOTIFY_CLIENT_ID  = 'covercolor_spotify_client_id';
+const LS_SPOTIFY_TOKEN      = 'covercolor_spotify_token';
+const LS_SPOTIFY_REFRESH    = 'covercolor_spotify_refresh';
+const LS_SPOTIFY_EXPIRES    = 'covercolor_spotify_expires';
+const LS_SPOTIFY_PLAYBACK   = 'covercolor_spotify_playback';
+const LS_ACTIVE_SERVICE     = 'covercolor_active_service'; // 'lastfm' | 'spotify'
 const LS_COLOR_CACHE        = 'covercolor_color_cache';
 const LS_CACHE_ENABLED      = 'covercolor_cache_enabled';
 const LS_POLL_RATE          = 'covercolor_poll_rate';
@@ -750,12 +750,15 @@ function renderHistory() {
 
   historyList.querySelectorAll('.history-item-main').forEach(el => {
     el.addEventListener('click', () => {
-      const e = list[+el.closest('.history-item').dataset.index];
+      const item = el.closest('.history-item');
+      item.classList.add('history-flash');
+      setTimeout(() => item.classList.remove('history-flash'), 300);
+      const e = list[+item.dataset.index];
       showResult(
         { hex: e.primary, rgb: hexToRgb(e.primary), secondary: { hex: e.secondary, rgb: hexToRgb(e.secondary) } },
         { name: e.name, size: e.size, skipHistory: true }
       );
-      historyBack.click();
+      setTimeout(() => historyBack.click(), 150);
     });
   });
 }
@@ -1073,10 +1076,16 @@ function updateMusicUI() {
   // npHero: always visible (music-only app now)
   npHero.classList.remove('hidden');
 
-  // Sync badge: visible when syncing is on; shows paused state
-  npSyncBadge.classList.toggle('hidden', !syncOn);
-  npSyncBadge.classList.toggle('paused', paused);
-  if (paused && syncOn) setSyncStatus('grey', '⏸ Paused');
+  // Sync badge
+  const hasAnyCredentials = !!(localStorage.getItem(LS_SPOTIFY_TOKEN) ||
+    (localStorage.getItem(LS_LFM_USER) && localStorage.getItem(LS_LFM_KEY)));
+  npSyncBadge.classList.remove('hidden');
+  npSyncBadge.classList.toggle('paused', paused && syncOn);
+  if (!hasAnyCredentials) {
+    setSyncStatus('red', 'Connect a service');
+  } else if (paused && syncOn) {
+    setSyncStatus('grey', '⏸ Paused');
+  }
 
   // Keep gradient visible when syncing and has colors
   if (syncOn && lastPrimary) result.classList.remove('hidden');
@@ -1387,16 +1396,19 @@ function toggleServiceRow(service) {
   if (isOpen) {
     config.classList.add('hidden');
     row.classList.remove('open', 'active');
+    row.querySelector('.settings-row-header')?.setAttribute('aria-expanded', 'false');
     return;
   }
 
   // Close the other row
   otherConfig.classList.add('hidden');
   otherRow.classList.remove('open', 'active');
+  otherRow.querySelector('.settings-row-header')?.setAttribute('aria-expanded', 'false');
 
   // Open this row and mark it as selected service
   config.classList.remove('hidden');
   row.classList.add('open', 'active');
+  row.querySelector('.settings-row-header')?.setAttribute('aria-expanded', 'true');
   localStorage.setItem(LS_ACTIVE_SERVICE, service);
 }
 
@@ -1440,7 +1452,7 @@ async function spotifyStartAuth() {
   if (!clientId) { showSpotifyStatus('error', 'Enter a Client ID first.'); return; }
   const verifier = generateVerifier();
   const challenge = await generateChallenge(verifier);
-  localStorage.setItem('colorpick_spotify_verifier', verifier);
+  localStorage.setItem('covercolor_spotify_verifier', verifier);
   localStorage.setItem(LS_SPOTIFY_CLIENT_ID, clientId);
   const redirectUri = window.location.origin + window.location.pathname;
   const params = new URLSearchParams({
@@ -1452,7 +1464,7 @@ async function spotifyStartAuth() {
 }
 
 async function spotifyExchangeCode(code) {
-  const verifier = localStorage.getItem('colorpick_spotify_verifier');
+  const verifier = localStorage.getItem('covercolor_spotify_verifier');
   const clientId = localStorage.getItem(LS_SPOTIFY_CLIENT_ID);
   const redirectUri = window.location.origin + window.location.pathname;
   const resp = await fetch('https://accounts.spotify.com/api/token', {
@@ -1465,7 +1477,7 @@ async function spotifyExchangeCode(code) {
     localStorage.setItem(LS_SPOTIFY_TOKEN, data.access_token);
     localStorage.setItem(LS_SPOTIFY_REFRESH, data.refresh_token || '');
     localStorage.setItem(LS_SPOTIFY_EXPIRES, String(Date.now() + (data.expires_in || 3600) * 1000));
-    localStorage.removeItem('colorpick_spotify_verifier');
+    localStorage.removeItem('covercolor_spotify_verifier');
   }
   return data;
 }
@@ -1633,6 +1645,7 @@ async function skipAndRefresh(direction) {
   // Immediately fade the art and show loading state while we wait for the next track
   npArt.style.opacity = '0';
   npArtWrap.classList.add('art-loading');
+  setSyncStatus('grey', 'Skipping…');
   await spotifyPlayerAction(direction);
   // Debounce: only fire one poll even if user skips rapidly
   lfmLastTrackKey = null;
@@ -1946,6 +1959,57 @@ updatePlaybackControls();
 // Restore active service — rows start closed, don't auto-open on load
 updateMusicUI();
 
+// ── Background theme ─────────────────────────────────────────────────────────
+const LS_BG_THEME = 'covercolor_bg_theme';
+const bgOrbsBtn   = document.getElementById('bg-orbs-btn');
+const bgLiquidBtn = document.getElementById('bg-liquid-btn');
+
+function applyBgTheme(theme) {
+  document.body.classList.toggle('bg-theme-orbs',   theme === 'orbs');
+  document.body.classList.toggle('bg-theme-liquid',  theme === 'liquid');
+  if (bgOrbsBtn)   bgOrbsBtn.classList.toggle('active',   theme === 'orbs');
+  if (bgLiquidBtn) bgLiquidBtn.classList.toggle('active', theme === 'liquid');
+  // Signal liquid-glass.js to pause/resume its RAF loop
+  window._bgTheme = theme;
+}
+
+const savedBgTheme = localStorage.getItem(LS_BG_THEME) || 'liquid';
+applyBgTheme(savedBgTheme);
+
+if (bgOrbsBtn) bgOrbsBtn.addEventListener('click', () => {
+  localStorage.setItem(LS_BG_THEME, 'orbs');
+  applyBgTheme('orbs');
+});
+if (bgLiquidBtn) bgLiquidBtn.addEventListener('click', () => {
+  localStorage.setItem(LS_BG_THEME, 'liquid');
+  applyBgTheme('liquid');
+});
+
+// ── Theme toggle ────────────────────────────────────────────────────────────
+const themeIconBtn  = document.getElementById('theme-icon-btn');
+const themeIconSun  = document.getElementById('theme-icon-sun');
+const themeIconMoon = document.getElementById('theme-icon-moon');
+const LS_THEME = 'covercolor_theme';
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const saved = localStorage.getItem(LS_THEME);
+// If no saved pref, follow system; otherwise use saved
+let isLightMode = saved ? saved === 'light' : !systemDark;
+function applyTheme(light) {
+  isLightMode = light;
+  document.body.classList.toggle('theme-light', light);
+  document.body.classList.toggle('theme-dark', !light);
+  if (themeIconSun)  themeIconSun.classList.toggle('hidden', light);
+  if (themeIconMoon) themeIconMoon.classList.toggle('hidden', !light);
+}
+applyTheme(isLightMode);
+if (themeIconBtn) {
+  themeIconBtn.addEventListener('click', () => {
+    const light = !isLightMode;
+    localStorage.setItem(LS_THEME, light ? 'light' : 'dark');
+    applyTheme(light);
+  });
+}
+
 // Handle Spotify OAuth callback
 (async () => {
   const params = new URLSearchParams(window.location.search);
@@ -1971,57 +2035,6 @@ updateMusicUI();
       showSpotifyStatus('error', 'Auth failed: ' + e.message);
     }
     return;
-  }
-
-  // ── Background theme ─────────────────────────────────────────────────────────
-  const LS_BG_THEME = 'covercolor_bg_theme';
-  const bgOrbsBtn   = document.getElementById('bg-orbs-btn');
-  const bgLiquidBtn = document.getElementById('bg-liquid-btn');
-
-  function applyBgTheme(theme) {
-    document.body.classList.toggle('bg-theme-orbs',   theme === 'orbs');
-    document.body.classList.toggle('bg-theme-liquid',  theme === 'liquid');
-    if (bgOrbsBtn)   bgOrbsBtn.classList.toggle('active',   theme === 'orbs');
-    if (bgLiquidBtn) bgLiquidBtn.classList.toggle('active', theme === 'liquid');
-    // Signal liquid-glass.js to pause/resume its RAF loop
-    window._bgTheme = theme;
-  }
-
-  const savedBgTheme = localStorage.getItem(LS_BG_THEME) || 'liquid';
-  applyBgTheme(savedBgTheme);
-
-  if (bgOrbsBtn) bgOrbsBtn.addEventListener('click', () => {
-    localStorage.setItem(LS_BG_THEME, 'orbs');
-    applyBgTheme('orbs');
-  });
-  if (bgLiquidBtn) bgLiquidBtn.addEventListener('click', () => {
-    localStorage.setItem(LS_BG_THEME, 'liquid');
-    applyBgTheme('liquid');
-  });
-
-  // ── Theme toggle ────────────────────────────────────────────────────────────
-  const themeIconBtn  = document.getElementById('theme-icon-btn');
-  const themeIconSun  = document.getElementById('theme-icon-sun');
-  const themeIconMoon = document.getElementById('theme-icon-moon');
-  const LS_THEME = 'colorpick_theme';
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const saved = localStorage.getItem(LS_THEME);
-  // If no saved pref, follow system; otherwise use saved
-  let isLightMode = saved ? saved === 'light' : !systemDark;
-  function applyTheme(light) {
-    isLightMode = light;
-    document.body.classList.toggle('theme-light', light);
-    document.body.classList.toggle('theme-dark', !light);
-    if (themeIconSun)  themeIconSun.classList.toggle('hidden', light);
-    if (themeIconMoon) themeIconMoon.classList.toggle('hidden', !light);
-  }
-  applyTheme(isLightMode);
-  if (themeIconBtn) {
-    themeIconBtn.addEventListener('click', () => {
-      const light = !isLightMode;
-      localStorage.setItem(LS_THEME, light ? 'light' : 'dark');
-      applyTheme(light);
-    });
   }
 
   // Always start sync when credentials are present — no Auto button gate
