@@ -58,10 +58,20 @@ def _extract_raw(img):
 
 # ── Skip-neutrals: vibrant-strip + ColorThief ─────────────────────────────────
 
+_MAX_VIBRANT_SAMPLES = 500  # enough for reliable ColorThief palette extraction
+
 def _vibrant_strip(img):
-    """1-row image containing only vibrant (non-neutral) pixels."""
-    pixels = list(img.getdata())
-    vibrant = [(r, g, b) for r, g, b in pixels if not _is_neutral(r, g, b)]
+    """1-row image containing only vibrant (non-neutral) pixels.
+
+    Stops scanning after _MAX_VIBRANT_SAMPLES qualifying pixels so large images
+    (e.g. 800×800 = 640 K pixels) don't pay the full O(n) cost.
+    """
+    vibrant = []
+    for r, g, b in img.getdata():
+        if not _is_neutral(r, g, b):
+            vibrant.append((r, g, b))
+            if len(vibrant) >= _MAX_VIBRANT_SAMPLES:
+                break
     if len(vibrant) < 50:
         return img
     strip = Image.new("RGB", (len(vibrant), 1))

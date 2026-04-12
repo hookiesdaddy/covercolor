@@ -138,17 +138,52 @@ function setArtSrc(src) {
 // ── In-memory color cache (keyed by art URL) ──────────────────────────────────
 // Loaded once from localStorage at startup; lookups are instant Map.get() calls.
 // Writes go to both the Map and localStorage so the cache survives page reloads.
+// Entries older than CACHE_TTL_MS (7 days) are expired on read.
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const _colorCacheMap = (() => {
   try { return new Map(Object.entries(JSON.parse(localStorage.getItem(LS_COLOR_CACHE) || '{}'))); }
   catch { return new Map(); }
 })();
 
-function cacheGet(url) { return _colorCacheMap.get(url) ?? null; }
+function cacheGet(url) {
+  const entry = _colorCacheMap.get(url);
+  if (!entry) return null;
+  // Support legacy entries stored without a timestamp
+  if (!entry.ts) return entry;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) { _colorCacheMap.delete(url); return null; }
+  return entry.data;
+}
 function cacheSet(url, data) {
-  _colorCacheMap.set(url, data);
+  _colorCacheMap.set(url, { data, ts: Date.now() });
   if (_colorCacheMap.size > 100) _colorCacheMap.delete(_colorCacheMap.keys().next().value);
   try { localStorage.setItem(LS_COLOR_CACHE, JSON.stringify(Object.fromEntries(_colorCacheMap))); }
   catch {}
+}
+
+// ── Off-main-thread image resize worker ──────────────────────────────────────
+// Shrinks album art blobs to 64×64 without blocking the UI thread.
+// Falls back gracefully to null if Workers or OffscreenCanvas are unavailable.
+const _resizeWorker = (() => {
+  try { return new Worker('/static/resize-worker.js'); } catch { return null; }
+})();
+
+function resizeToBlob(blob) {
+  if (!_resizeWorker) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const id = `${Date.now()}_${Math.random()}`;
+    const timer = setTimeout(() => {
+      _resizeWorker.removeEventListener('message', handler);
+      resolve(null);
+    }, 3000);
+    function handler(e) {
+      if (e.data.id !== id) return;
+      clearTimeout(timer);
+      _resizeWorker.removeEventListener('message', handler);
+      resolve(e.data.error ? null : e.data.blob);
+    }
+    _resizeWorker.addEventListener('message', handler);
+    _resizeWorker.postMessage({ id, blob });
+  });
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -325,7 +360,17 @@ function getLightColor() {
 }
 
 // ── Color transforms (brightness floor + saturation boost) ───────────────────
+// Cache keyed by "hex|floorLevel|satBoost" — eliminates repeated localStorage
+// reads and redundant HSL math for the same color/settings combination.
+// Capped at 100 entries to stay memory-bounded.
+const _transformCache = new Map();
+
 function applyColorTransforms(hex) {
+  const floorLevel = localStorage.getItem(LS_BRIGHTNESS_FLOOR) || 'normal';
+  const satBoost = !!(satBoostToggle && satBoostToggle.checked);
+  const cacheKey = `${hex}|${floorLevel}|${satBoost}`;
+  if (_transformCache.has(cacheKey)) return _transformCache.get(cacheKey);
+
   const r = parseInt(hex.slice(1,3), 16) / 255;
   const g = parseInt(hex.slice(3,5), 16) / 255;
   const b = parseInt(hex.slice(5,7), 16) / 255;
@@ -342,13 +387,11 @@ function applyColorTransforms(hex) {
   }
 
   // Apply brightness floor (low=5%, normal=15%, high=35%)
-  const floorLevel = localStorage.getItem(LS_BRIGHTNESS_FLOOR) || 'normal';
   const floorMap = { low: 0.05, normal: 0.15, high: 0.35 };
-  const floor = floorMap[floorLevel] ?? 0.15;
-  l = Math.max(l, floor);
+  l = Math.max(l, floorMap[floorLevel] ?? 0.15);
 
   // Apply saturation boost (+30%, clamped)
-  if (satBoostToggle && satBoostToggle.checked) s = Math.min(1, s + 0.30);
+  if (satBoost) s = Math.min(1, s + 0.30);
 
   // HSL → RGB
   function hue2rgb(p, q, t) {
@@ -365,7 +408,11 @@ function applyColorTransforms(hex) {
     r2 = hue2rgb(p,q, h+1/3); g2 = hue2rgb(p,q,h); b2 = hue2rgb(p,q, h-1/3);
   }
   const toHex = v => Math.round(v*255).toString(16).padStart(2,'0');
-  return `#${toHex(r2)}${toHex(g2)}${toHex(b2)}`;
+  const result = `#${toHex(r2)}${toHex(g2)}${toHex(b2)}`;
+
+  if (_transformCache.size >= 100) _transformCache.delete(_transformCache.keys().next().value);
+  _transformCache.set(cacheKey, result);
+  return result;
 }
 
 // ── Scene / device role helpers ───────────────────────────────────────────────
@@ -1275,18 +1322,9 @@ async function extractFromArt(artUrl, name = null) {
     const artBlob = await artResp.blob();
     if (stale()) return;
 
-    // ── Downsample to 64×64 WebP for faster extraction (displayed art unaffected) ──
-    let uploadBlob = artBlob;
-    try {
-      const bmp = await createImageBitmap(artBlob);
-      const canvas = Object.assign(document.createElement('canvas'), { width: 64, height: 64 });
-      canvas.getContext('2d').drawImage(bmp, 0, 0, 64, 64);
-      bmp.close();
-      // Prefer WebP (smaller), fall back to JPEG
-      const fmt = canvas.toDataURL('image/webp').startsWith('data:image/webp')
-        ? 'image/webp' : 'image/jpeg';
-      uploadBlob = await new Promise(res => canvas.toBlob(res, fmt, 0.80));
-    } catch {}
+    // ── Downsample to 64×64 WebP off-thread for faster extraction ───────────────
+    const resized = await resizeToBlob(artBlob);
+    const uploadBlob = resized ?? artBlob;
     if (stale()) return;
 
     const fd = new FormData();
