@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=105" />
+  <link rel="stylesheet" href="/static/style.css?v=106" />
 </head>
 <body>
   <canvas id="liquid-glass-bg" class="spline-bg" style="opacity:0"></canvas>
@@ -122,11 +122,11 @@
       <!-- ── Controls bar ── -->
       <div class="controls-bar">
         <div class="controls-row">
-          <button class="options-btn" id="options-btn" aria-label="Options">
+          <button class="options-btn" id="options-btn" aria-label="Customize">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
             </svg>
-            Options
+            Customize
             <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -246,25 +246,6 @@
           <ul id="color-prefs-list" class="color-prefs-list"></ul>
         </div>
 
-        <!-- Category: App -->
-        <p class="options-category">App</p>
-
-        <div class="poll-rate-row">
-          <div class="poll-rate-left">
-            <span class="toggle-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-              </svg>
-              Auto Cover Focus
-            </span>
-            <span class="poll-rate-desc">Auto-hides controls when idle</span>
-          </div>
-          <div class="poll-rate-control">
-            <input type="range" id="fullscreen-delay-slider" min="0" max="4" step="1" value="0" />
-            <span id="fullscreen-delay-value">Off</span>
-          </div>
-        </div>
-
         <label class="toggle-row">
           <span class="toggle-label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -274,35 +255,6 @@
           </span>
           <div class="toggle-switch">
             <input type="checkbox" id="remember-opts-toggle" />
-            <span class="toggle-slider"></span>
-          </div>
-        </label>
-
-        <div class="poll-rate-row">
-          <div class="poll-rate-left">
-            <span class="toggle-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
-              Background
-            </span>
-            <span class="poll-rate-desc">Visual style for the background</span>
-          </div>
-          <div class="bg-theme-pills">
-            <button class="bg-theme-pill" id="bg-orbs-btn" data-bg="orbs">Glow</button>
-            <button class="bg-theme-pill" id="bg-liquid-btn" data-bg="liquid">Orb</button>
-          </div>
-        </div>
-
-        <label class="toggle-row">
-          <span class="toggle-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
-            </svg>
-            Pulse to beat
-          </span>
-          <div class="toggle-switch">
-            <input type="checkbox" id="beat-pulse-toggle" />
             <span class="toggle-slider"></span>
           </div>
         </label>
@@ -539,7 +491,57 @@
         </div>
       </section>
 
-<p id="app-version" class="app-version">covercolor</p>
+      <!-- ── App section ── -->
+      <section class="settings-section">
+        <h3 class="section-title">App</h3>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
+              Auto Cover Focus
+            </span>
+            <span class="poll-rate-desc">Auto-hides controls when idle</span>
+          </div>
+          <div class="poll-rate-control">
+            <input type="range" id="fullscreen-delay-slider" min="0" max="4" step="1" value="0" />
+            <span id="fullscreen-delay-value">Off</span>
+          </div>
+        </div>
+
+        <div class="poll-rate-row">
+          <div class="poll-rate-left">
+            <span class="toggle-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
+              Background
+            </span>
+            <span class="poll-rate-desc">Visual style for the background</span>
+          </div>
+          <div class="bg-theme-pills">
+            <button class="bg-theme-pill" id="bg-orbs-btn" data-bg="orbs">Glow</button>
+            <button class="bg-theme-pill" id="bg-liquid-btn" data-bg="liquid">Orb</button>
+          </div>
+        </div>
+
+        <label class="toggle-row">
+          <span class="toggle-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+            </svg>
+            Pulse to beat
+          </span>
+          <div class="toggle-switch">
+            <input type="checkbox" id="beat-pulse-toggle" />
+            <span class="toggle-slider"></span>
+          </div>
+        </label>
+      </section>
+
+      <p id="app-version" class="app-version">covercolor</p>
     </div>
 
   </div>
