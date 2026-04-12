@@ -136,9 +136,9 @@
       vec3  midCol = mix(u_primary, u_secondary, 0.5);
       /* Base: near-black in dark mode, light lavender in light mode  */
       vec3  bg     = mix(vec3(0.007, 0.007, 0.010), vec3(0.847, 0.847, 0.910), u_light);
-      /* Reduced glow — just enough to show the orb colors bleed out  */
-      bg += midCol    * mix(0.12, 0.05, u_light) * exp(-bgD * 1.3);
-      bg += u_primary * mix(0.05, 0.02, u_light) * exp(-bgD * 0.6);
+      /* Atmospheric halo — subtle in dark, lighter touch in light */
+      bg += midCol    * mix(0.06, 0.04, u_light) * exp(-bgD * 1.5);
+      bg += u_primary * mix(0.025, 0.015, u_light) * exp(-bgD * 0.7);
 
       vec3 col = bg;
 

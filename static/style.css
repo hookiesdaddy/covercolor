@@ -37,7 +37,7 @@
     --card-shadow: 0 0 0 1px rgba(255,255,255,0.6), 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
     --glass-highlight: rgba(255,255,255,0.60);
     --glass-specular: rgba(255,255,255,0.80);
-    --orb-opacity: 0.25;
+    --orb-opacity: 0.55;
   }
 }
 
@@ -72,7 +72,7 @@ body.theme-light {
   --card-shadow: 0 0 0 1px rgba(255,255,255,0.6), 0 20px 60px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
   --glass-highlight: rgba(255,255,255,0.60);
   --glass-specular: rgba(255,255,255,0.80);
-  --orb-opacity: 0.25;
+  --orb-opacity: 0.55;
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
