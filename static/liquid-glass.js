@@ -69,18 +69,33 @@
     }
 
     /* ── Blob SDF — smooth-min of orbiting spheres ───────────────── */
-    /* True SDF: never self-intersects, no fold-through artifacts.   */
     float sdf(vec3 p) {
       float t = u_time;
-      /* Central sphere */
-      float d = length(p) - 0.88;
-      /* Three satellite lobes orbiting at different speeds/axes */
-      d = smin(d, length(p - vec3(sin(t*0.11)*0.52, cos(t*0.13)*0.48, sin(t*0.09)*0.44)) - 0.62, 0.44);
-      d = smin(d, length(p - vec3(cos(t*0.07)*0.58, sin(t*0.15)*0.52, cos(t*0.12)*0.48)) - 0.58, 0.44);
-      d = smin(d, length(p - vec3(sin(t*0.14)*0.44, cos(t*0.08)*0.56, sin(t*0.17)*0.50)) - 0.54, 0.40);
-      /* Mild surface texture — small enough to never cause folds    */
-      d += (vnoise(p * 2.8 + t * 0.05) - 0.5) * 0.055;
+      /* Central sphere — slight Y squeeze so goo pools/sags */
+      float d = length(p * vec3(1.0, 0.94, 1.0)) - 0.88;
+      /* Satellite lobes biased downward — gravity droop */
+      d = smin(d, length(p - vec3(sin(t*0.11)*0.52, cos(t*0.13)*0.48 - 0.07, sin(t*0.09)*0.44)) - 0.62, 0.50);
+      d = smin(d, length(p - vec3(cos(t*0.07)*0.58, sin(t*0.15)*0.52 - 0.06, cos(t*0.12)*0.48)) - 0.58, 0.50);
+      d = smin(d, length(p - vec3(sin(t*0.14)*0.44, cos(t*0.08)*0.56 - 0.05, sin(t*0.17)*0.50)) - 0.54, 0.46);
+      /* Two-octave surface ripple — coarse shape + fine skin texture */
+      d += (vnoise(p * 2.8 + t * 0.05) - 0.5) * 0.050;
+      d += (vnoise(p * 6.2 + t * 0.09) - 0.5) * 0.016;
+      /* Gentle global breathe */
+      d *= 1.0 + sin(t * 0.31) * 0.022;
       return d;
+    }
+
+    /* ── Ambient occlusion ───────────────────────────────────────── */
+    /* 4 SDF samples along normal — darkens crevices between lobes   */
+    float calcAO(vec3 p, vec3 n) {
+      float ao = 0.0, sca = 1.0;
+      for (int i = 1; i <= 4; i++) {
+        float h = float(i) * 0.11;
+        float d = sdf(p + n * h);
+        ao += (h - d) * sca;
+        sca *= 0.5;
+      }
+      return clamp(1.0 - ao * 1.6, 0.0, 1.0);
     }
 
     /* ── Sphere-trace ────────────────────────────────────────────── */
@@ -134,8 +149,8 @@
       /* Atmospheric background */
       float bgD    = length(uv);
       vec3  midCol = mix(u_primary, u_secondary, 0.5);
-      /* Base: near-black in dark mode, light lavender in light mode  */
-      vec3  bg     = mix(vec3(0.007, 0.007, 0.010), vec3(0.847, 0.847, 0.910), u_light);
+      /* Base: match body #0a0a0f in dark mode, light lavender in light mode  */
+      vec3  bg     = mix(vec3(0.001, 0.001, 0.002), vec3(0.847, 0.847, 0.910), u_light);
       /* Atmospheric halo — subtle in dark, lighter touch in light */
       bg += midCol    * mix(0.01, 0.04, u_light) * exp(-bgD * 2.0);
       bg += u_primary * mix(0.004, 0.015, u_light) * exp(-bgD * 1.0);
@@ -149,28 +164,43 @@
         vec3 n = calcNormal(p);
         vec3 v = -rd;
         vec3 r = reflect(rd, n);
+        float ao = calcAO(p, n);
 
-        float fr  = pow(1.0 - max(dot(n, v), 0.0), 2.2);
+        /* Stronger Fresnel — glassy wet surface */
+        float fr  = pow(1.0 - max(dot(n, v), 0.0), 3.5);
 
         float hue = dot(n, vec3(0.55, 0.80, 0.30))
                   + vnoise(p * 2.0 + u_time * 0.03) * 0.40;
         hue = fract(hue * 0.65 + u_time * 0.018);
 
-        vec3 surf = palette(hue) * 1.05;
+        vec3 surf = palette(hue) * 0.70;
 
         float s1 = pow(max(dot(r, normalize(vec3( 1.6, 2.2, 1.3))), 0.0),  72.0);
         float s2 = pow(max(dot(r, normalize(vec3(-1.3,-0.9, 1.0))), 0.0),  32.0);
         float s3 = pow(max(dot(r, normalize(vec3( 0.4,-1.9, 0.9))), 0.0),  24.0);
         float rim = pow(1.0 - max(dot(n, v), 0.0), 5.0);
 
-        col  = surf * mix(0.60, 0.92, fr);
-        col += vec3(1.00, 0.98, 0.95)           * s1 * 0.40;
-        col += mix(u_secondary, vec3(1.0), 0.4) * s2 * 0.28;
-        col += mix(u_primary,   vec3(1.0), 0.3) * s3 * 0.22;
-        col += u_secondary * 1.0                * rim * 0.4;
+        /* Fake subsurface scattering — goo is translucent                  */
+        /* Thickness: sample SDF behind surface; negative = still inside    */
+        float thk = clamp(-sdf(p - n * 0.55) * 2.0, 0.0, 1.0);
+        /* Back-lit: light shining through thin goo toward camera           */
+        vec3  L1     = normalize(vec3(1.6, 2.2, 1.3));
+        float backLit = pow(max(dot(rd, -L1), 0.0), 2.5);
+        float sss     = backLit * exp(-thk * 2.2); /* brightest at thin edges */
+        vec3  sssCol  = mix(u_primary, u_secondary, 0.35) * 1.8;
 
-        float edgeFade = 1.0 - smoothstep(0.0, 0.18, fr);
-        col = mix(col, bg * 2.5, (1.0 - edgeFade) * fr * 0.3);
+        col  = surf * mix(0.50, 0.78, fr) * ao; /* AO darkens crevices */
+        col += vec3(1.00, 0.98, 0.95)           * s1 * 0.36;
+        col += mix(u_secondary, vec3(1.0), 0.4) * s2 * 0.26;
+        col += mix(u_primary,   vec3(1.0), 0.3) * s3 * 0.20;
+        col += u_secondary * 1.0                * rim * 0.34;
+        col += sssCol * sss * 0.50; /* SSS inner glow at thin regions */
+
+        /* Edge transparency — thin goo at grazing angles shows through,    */
+        /* tinted by SSS color for a translucent membrane feel              */
+        float edgeFade = 1.0 - smoothstep(0.0, 0.22, fr);
+        vec3  edgeTint = mix(bg * 2.2, sssCol * 0.6 + bg, 0.4);
+        col = mix(col, edgeTint, (1.0 - edgeFade) * fr * 0.45);
       }
 
       /* Vignette (pre-gamma, shared across samples) */
@@ -286,9 +316,6 @@
 
   requestAnimationFrame(() => {
     draw();
-    canvas.style.transition = 'opacity 1.4s ease';
-    canvas.style.opacity    = '1';
-    const orbs = document.querySelector('.bg-orbs');
-    if (orbs) orbs.classList.add('spline-ready');
+    // Opacity is now controlled by CSS (ambient-mode class) — don't override inline
   });
 })();
