@@ -196,6 +196,7 @@ const LS_IDLE_BEHAVIOR      = 'covercolor_idle_behavior';    // 'keep'|'off'|'wh
 const LS_GOVEE_DEVICES      = 'covercolor_govee_devices';      // [{device,model,name}]
 const LS_GOVEE_SELECTED     = 'covercolor_govee_selected';     // [{device,model,name}] subset
 const LS_LIGHTS_PAUSED      = 'covercolor_lights_paused';       // bool — freeze light updates without stopping polling
+const LS_LIGHT_BRIGHTNESS   = 'covercolor_light_brightness';    // 10-100, default 100
 const LS_GOVEE_USE_LAN      = 'covercolor_govee_use_lan';      // bool — prefer LAN API
 const LS_GOVEE_LAN_DEVICES  = 'covercolor_govee_lan_devices';  // [{ip,device,sku,name}]
 const LS_GOVEE_LAN_SELECTED = 'covercolor_govee_lan_selected'; // [{ip,device,sku,name}] subset
@@ -342,14 +343,22 @@ function applyColorTransforms(hex) {
     else                h = ((r - g) / d + 4) / 6;
   }
 
+  // Guard: near-black and near-white colors have unstable HSL saturation —
+  // even a 2/255 channel difference registers as ~30% saturation at l≈0.
+  // Strip the hue entirely so #020204 doesn't become a dim blue after boosting.
+  const rawS = s;
+  if (l < 0.04) s = 0;          // near-black  → achromatic
+  if (l > 0.96) s = 0;          // near-white  → achromatic
+
   // Apply brightness floor (low=5%, normal=15%, high=35%)
   const floorLevel = localStorage.getItem(LS_BRIGHTNESS_FLOOR) || 'normal';
   const floorMap = { low: 0.05, normal: 0.15, high: 0.35 };
   const floor = floorMap[floorLevel] ?? 0.15;
   l = Math.max(l, floor);
 
-  // Apply saturation boost (+30%, clamped)
-  if (satBoostToggle && satBoostToggle.checked) s = Math.min(1, s + 0.30);
+  // Apply saturation boost (+30%, clamped) — only if the color had meaningful
+  // saturation to begin with (rawS > 0.08 prevents amplifying near-grey hues)
+  if (satBoostToggle && satBoostToggle.checked && rawS > 0.08) s = Math.min(1, s + 0.30);
 
   // HSL → RGB
   function hue2rgb(p, q, t) {
@@ -367,6 +376,18 @@ function applyColorTransforms(hex) {
   }
   const toHex = v => Math.round(v*255).toString(16).padStart(2,'0');
   return `#${toHex(r2)}${toHex(g2)}${toHex(b2)}`;
+}
+
+// ── Light brightness multiplier ───────────────────────────────────────────────
+// Applied after applyColorTransforms — scales RGB channels by the slider %.
+// Does NOT affect the UI color display, only what gets sent to lights.
+function applyBrightness(hex) {
+  const pct = parseInt(localStorage.getItem(LS_LIGHT_BRIGHTNESS) ?? '100', 10) / 100;
+  if (pct >= 1) return hex; // no-op at 100%
+  const r = Math.round(parseInt(hex.slice(1,3), 16) * pct);
+  const g = Math.round(parseInt(hex.slice(3,5), 16) * pct);
+  const b = Math.round(parseInt(hex.slice(5,7), 16) * pct);
+  return '#' + [r,g,b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2,'0')).join('');
 }
 
 // ── Scene / device role helpers ───────────────────────────────────────────────
@@ -1199,8 +1220,8 @@ async function extractFromArt(artUrl, name = null) {
   // ── Helper: send primaryHex → primary devices, secondaryHex → secondary devices ─
   async function maybeSendLight(primaryHex, secondaryHex) {
     if (!syncOn) return;
-    const tPrimary   = applyColorTransforms(primaryHex);
-    const tSecondary = applyColorTransforms(secondaryHex ?? primaryHex);
+    const tPrimary   = applyBrightness(applyColorTransforms(primaryHex));
+    const tSecondary = applyBrightness(applyColorTransforms(secondaryHex ?? primaryHex));
     const sentKey = `${tPrimary}|${tSecondary}`;
     if (sentKey === lastSentHex) return;
     lastSentHex = sentKey;
@@ -1562,13 +1583,55 @@ function applyShowColorValues(show) {
   document.body.classList.toggle('hide-color-values', !show);
 }
 if (showColorValuesToggle) {
-  showColorValuesToggle.checked = localStorage.getItem(LS_SHOW_COLOR_VALUES) !== 'false';
+  showColorValuesToggle.checked = localStorage.getItem(LS_SHOW_COLOR_VALUES) === 'true';
   applyShowColorValues(showColorValuesToggle.checked);
   showColorValuesToggle.addEventListener('change', () => {
     localStorage.setItem(LS_SHOW_COLOR_VALUES, showColorValuesToggle.checked ? 'true' : 'false');
     applyShowColorValues(showColorValuesToggle.checked);
   });
 }
+
+// ── Light brightness slider ───────────────────────────────────────────────────
+const lightBrightnessSlider = document.getElementById('light-brightness-slider');
+const lightBrightnessValue  = document.getElementById('light-brightness-value');
+(function initBrightnessSlider() {
+  const saved = parseInt(localStorage.getItem(LS_LIGHT_BRIGHTNESS) ?? '100', 10);
+  if (lightBrightnessSlider) lightBrightnessSlider.value = saved;
+  if (lightBrightnessValue)  lightBrightnessValue.textContent = saved + '%';
+})();
+if (lightBrightnessSlider) {
+  lightBrightnessSlider.addEventListener('input', () => {
+    const v = lightBrightnessSlider.value;
+    if (lightBrightnessValue) lightBrightnessValue.textContent = v + '%';
+    localStorage.setItem(LS_LIGHT_BRIGHTNESS, v);
+    lastSentHex = null; // force re-send with new brightness on next poll
+  });
+}
+
+// ── Browser fullscreen ────────────────────────────────────────────────────────
+const fullscreenBtn   = document.getElementById('fullscreen-btn');
+const fsEnterIcon     = document.getElementById('fs-enter-icon');
+const fsExitIcon      = document.getElementById('fs-exit-icon');
+
+function updateFullscreenBtnState() {
+  const isFs = !!document.fullscreenElement;
+  if (fullscreenBtn) fullscreenBtn.classList.toggle('fs-active', isFs);
+  if (fsEnterIcon)   fsEnterIcon.classList.toggle('hidden', isFs);
+  if (fsExitIcon)    fsExitIcon.classList.toggle('hidden', !isFs);
+  fullscreenBtn && (fullscreenBtn.title = isFs ? 'Exit fullscreen' : 'Fullscreen');
+}
+
+if (fullscreenBtn) {
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenBtnState);
 
 function applyBpm(rawBpm) {
   const enabled = localStorage.getItem(LS_BEAT_PULSE) !== 'false';

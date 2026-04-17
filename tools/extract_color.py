@@ -20,6 +20,15 @@ def _is_neutral(r, g, b):
     return _saturation(r, g, b) < 0.18 or max(r, g, b) < 40 or min(r, g, b) > 215
 
 
+def _normalize_near_black(r, g, b):
+    """Collapse near-black colors (max channel < 15) to pure black.
+    JPEG/WebP compression artifacts give e.g. (2,2,4) which has 33% HSL
+    saturation despite being perceptually identical to black."""
+    if max(r, g, b) < 15:
+        return 0, 0, 0
+    return r, g, b
+
+
 # ── Default: pure frequency-based, no filtering ───────────────────────────────
 
 def _extract_raw(img):
@@ -120,6 +129,11 @@ def extract_dominant_color(image_bytes: bytes, skip_neutrals: bool = False) -> d
         (r, g, b), (r2, g2, b2) = _extract_vibrant(img)
     else:
         (r, g, b), (r2, g2, b2) = _extract_raw(img)
+
+    # Normalize compression artifacts: near-black pixels get faint hues
+    # from JPEG/WebP encoding that produce misleadingly high HSL saturation.
+    r,  g,  b  = _normalize_near_black(r,  g,  b)
+    r2, g2, b2 = _normalize_near_black(r2, g2, b2)
 
     return {
         "hex": "#{:02x}{:02x}{:02x}".format(r, g, b),
