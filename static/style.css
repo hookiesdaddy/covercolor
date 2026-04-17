@@ -382,8 +382,7 @@ header { display: flex; align-items: center; gap: 0.5rem; }
 .copied-toast { font-size: 0.7rem; color: #4ade80; font-weight: 500; }
 .copied-toast.hidden { display: none; }
 
-body.hide-color-values .hex-btn,
-body.hide-color-values .rgb-value { display: none; }
+body.hide-color-values .color-row { display: none; }
 
 /* ── Toggles ────────────────────────────────────────────────────────────────── */
 .toggle-row { display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.7rem 1rem; cursor: pointer; user-select: none; transition: background 0.15s; }

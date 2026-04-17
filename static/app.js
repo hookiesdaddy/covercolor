@@ -390,6 +390,65 @@ function applyBrightness(hex) {
   return '#' + [r,g,b].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2,'0')).join('');
 }
 
+// ── Module-level light dispatch ───────────────────────────────────────────────
+// Handles both LAN and cloud paths. Called by maybeSendLight (extraction) and
+// directly by the brightness slider for immediate re-send without re-extraction.
+async function dispatchLightColors(tPrimary, tSecondary, signal = null) {
+  const fetchOpts = (extra = {}) => signal ? { signal, ...extra } : { ...extra };
+  const apiKey = loadApiKey();
+  const headers = apiKey ? { 'X-Govee-Api-Key': apiKey } : {};
+
+  const useLan = localStorage.getItem(LS_GOVEE_USE_LAN) === 'true';
+  if (useLan) {
+    const lanPrimary   = getLanDevicesByRole('primary');
+    const lanSecondary = getLanDevicesByRole('secondary');
+    if (lanPrimary.length || lanSecondary.length) {
+      const sends = [];
+      if (lanPrimary.length) {
+        const fd = new FormData(); fd.append('hex', tPrimary); fd.append('devices', JSON.stringify(lanPrimary));
+        sends.push(fetch('/set-light-lan', fetchOpts({ method: 'POST', body: fd })));
+      }
+      if (lanSecondary.length) {
+        const fd = new FormData(); fd.append('hex', tSecondary); fd.append('devices', JSON.stringify(lanSecondary));
+        sends.push(fetch('/set-light-lan', fetchOpts({ method: 'POST', body: fd })));
+      }
+      try {
+        await Promise.all(sends);
+        _goveeOk = true;
+        setSyncStatus('green', 'Synced ✓');
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        _goveeOk = false;
+        setSyncStatus('orange', 'Lights offline');
+      }
+      return;
+    }
+    // Fall through to cloud if no LAN devices configured
+  }
+
+  const cloudPrimary   = getDevicesByRole('primary');
+  const cloudSecondary = getDevicesByRole('secondary');
+  if (!cloudPrimary.length && !cloudSecondary.length) return;
+  const sends = [];
+  if (cloudPrimary.length) {
+    const fd = new FormData(); fd.append('hex', tPrimary); fd.append('selected_devices', JSON.stringify(cloudPrimary));
+    sends.push(fetch('/set-light-hex', fetchOpts({ method: 'POST', headers, body: fd })));
+  }
+  if (cloudSecondary.length) {
+    const fd = new FormData(); fd.append('hex', tSecondary); fd.append('selected_devices', JSON.stringify(cloudSecondary));
+    sends.push(fetch('/set-light-hex', fetchOpts({ method: 'POST', headers, body: fd })));
+  }
+  try {
+    await Promise.all(sends);
+    _goveeOk = true;
+    setSyncStatus('green', 'Synced ✓');
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    _goveeOk = false;
+    setSyncStatus('orange', 'Lights offline');
+  }
+}
+
 // ── Scene / device role helpers ───────────────────────────────────────────────
 function loadDeviceRoles() {
   try { return JSON.parse(localStorage.getItem(LS_DEVICE_ROLES) || '{}'); } catch { return {}; }
@@ -1217,7 +1276,7 @@ async function extractFromArt(artUrl, name = null) {
   const skipNeutrals = loadSkipNeutrals();
   const cacheEnabled = localStorage.getItem(LS_CACHE_ENABLED) !== 'false';
 
-  // ── Helper: send primaryHex → primary devices, secondaryHex → secondary devices ─
+  // ── Helper: apply transforms + dedup check, then dispatch to lights ──────────
   async function maybeSendLight(primaryHex, secondaryHex) {
     if (!syncOn) return;
     const tPrimary   = applyBrightness(applyColorTransforms(primaryHex));
@@ -1225,57 +1284,8 @@ async function extractFromArt(artUrl, name = null) {
     const sentKey = `${tPrimary}|${tSecondary}`;
     if (sentKey === lastSentHex) return;
     lastSentHex = sentKey;
-    idleActionSent = false; // reset idle flag — we're actively playing
-
-    const useLan = localStorage.getItem(LS_GOVEE_USE_LAN) === 'true';
-    if (useLan) {
-      const lanPrimary   = getLanDevicesByRole('primary');
-      const lanSecondary = getLanDevicesByRole('secondary');
-      if (lanPrimary.length || lanSecondary.length) {
-        const sends = [];
-        if (lanPrimary.length) {
-          const fd = new FormData(); fd.append('hex', tPrimary); fd.append('devices', JSON.stringify(lanPrimary));
-          sends.push(fetch('/set-light-lan', { method: 'POST', body: fd, signal: abort.signal }));
-        }
-        if (lanSecondary.length) {
-          const fd = new FormData(); fd.append('hex', tSecondary); fd.append('devices', JSON.stringify(lanSecondary));
-          sends.push(fetch('/set-light-lan', { method: 'POST', body: fd, signal: abort.signal }));
-        }
-        try {
-          await Promise.all(sends);
-          _goveeOk = true;
-          setSyncStatus('green', 'Synced ✓');
-        } catch (e) {
-          if (e.name === 'AbortError') return;
-          _goveeOk = false;
-          setSyncStatus('orange', 'Lights offline');
-        }
-        return;
-      }
-      // Fall through to cloud if no LAN devices configured
-    }
-
-    const cloudPrimary   = getDevicesByRole('primary');
-    const cloudSecondary = getDevicesByRole('secondary');
-    if (!cloudPrimary.length && !cloudSecondary.length) return;
-    const sends = [];
-    if (cloudPrimary.length) {
-      const fd = new FormData(); fd.append('hex', tPrimary); fd.append('selected_devices', JSON.stringify(cloudPrimary));
-      sends.push(fetch('/set-light-hex', { method: 'POST', headers, body: fd, signal: abort.signal }));
-    }
-    if (cloudSecondary.length) {
-      const fd = new FormData(); fd.append('hex', tSecondary); fd.append('selected_devices', JSON.stringify(cloudSecondary));
-      sends.push(fetch('/set-light-hex', { method: 'POST', headers, body: fd, signal: abort.signal }));
-    }
-    try {
-      await Promise.all(sends);
-      _goveeOk = true;
-      setSyncStatus('green', 'Synced ✓');
-    } catch (e) {
-      if (e.name === 'AbortError') return;
-      _goveeOk = false;
-      setSyncStatus('orange', 'Lights offline');
-    }
+    idleActionSent = false;
+    await dispatchLightColors(tPrimary, tSecondary, abort.signal);
   }
 
   // ── Album cache lookup ───────────────────────────────────────────────────────
@@ -1604,22 +1614,18 @@ if (lightBrightnessSlider) {
     const v = lightBrightnessSlider.value;
     if (lightBrightnessValue) lightBrightnessValue.textContent = v + '%';
     localStorage.setItem(LS_LIGHT_BRIGHTNESS, v);
-    lastSentHex = null; // force re-send with new brightness on next poll
+    // Re-send immediately with new brightness (don't wait for next poll)
+    if (lastPrimary && localStorage.getItem(LS_LFM_SYNC) === 'true') {
+      const tP = applyBrightness(applyColorTransforms(lastPrimary.hex));
+      const tS = applyBrightness(applyColorTransforms(lastSecondary?.hex ?? lastPrimary.hex));
+      lastSentHex = `${tP}|${tS}`;
+      dispatchLightColors(tP, tS);
+    }
   });
 }
 
 // ── Browser fullscreen ────────────────────────────────────────────────────────
-const fullscreenBtn   = document.getElementById('fullscreen-btn');
-const fsEnterIcon     = document.getElementById('fs-enter-icon');
-const fsExitIcon      = document.getElementById('fs-exit-icon');
-
-function updateFullscreenBtnState() {
-  const isFs = !!document.fullscreenElement;
-  if (fullscreenBtn) fullscreenBtn.classList.toggle('fs-active', isFs);
-  if (fsEnterIcon)   fsEnterIcon.classList.toggle('hidden', isFs);
-  if (fsExitIcon)    fsExitIcon.classList.toggle('hidden', !isFs);
-  fullscreenBtn && (fullscreenBtn.title = isFs ? 'Exit fullscreen' : 'Fullscreen');
-}
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 
 if (fullscreenBtn) {
   fullscreenBtn.addEventListener('click', () => {
@@ -1629,9 +1635,11 @@ if (fullscreenBtn) {
       document.exitFullscreen().catch(() => {});
     }
   });
+  document.addEventListener('fullscreenchange', () => {
+    fullscreenBtn.classList.toggle('fs-active', !!document.fullscreenElement);
+    fullscreenBtn.title = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+  });
 }
-
-document.addEventListener('fullscreenchange', updateFullscreenBtnState);
 
 function applyBpm(rawBpm) {
   const enabled = localStorage.getItem(LS_BEAT_PULSE) !== 'false';
@@ -2036,6 +2044,15 @@ function exitAmbient() {
   if (ambientOverlay) ambientOverlay.classList.remove('visible');
   document.body.classList.remove('ambient-mode');
   if (ambientBgMenu) ambientBgMenu.classList.add('hidden');
+
+  // Cut goo canvas immediately (no 0.8s linger) — restore CSS control after
+  const splineBg = document.getElementById('liquid-glass-bg');
+  if (splineBg) {
+    splineBg.style.transition = 'none';
+    splineBg.style.opacity = '0';
+    setTimeout(() => { splineBg.style.cssText = ''; }, 50);
+  }
+
   const card = document.querySelector('.card');
   card.style.opacity   = '0';
   card.style.transform = 'scale(0.96)';
