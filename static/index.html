@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
-  <link rel="stylesheet" href="/static/style.css?v=135" />
+  <link rel="stylesheet" href="/static/style.css?v=136" />
 </head>
 <body>
   <canvas id="liquid-glass-bg" class="spline-bg"></canvas>
@@ -20,12 +20,13 @@
     <div class="orb orb-2"></div>
   </div>
 
-  <div class="card">
-
-    <!-- ── Brightness side slider ── -->
+  <div class="card-outer">
+    <!-- ── Brightness side slider (floats left of card) ── -->
     <div class="brightness-side" id="brightness-side" title="Light brightness">
       <input type="range" id="light-brightness-slider" min="10" max="100" step="1" value="100" class="brightness-side-slider" orient="vertical" />
     </div>
+
+  <div class="card">
 
     <!-- ── Main view ── -->
     <div id="main-view">
@@ -534,6 +535,7 @@
     </div>
 
   </div>
+  </div><!-- /.card-outer -->
 
   <!-- ── Ambient mode overlay ── -->
   <div id="ambient-overlay" aria-live="polite">
@@ -581,7 +583,7 @@
   <script src="/static/backgrounds/particles.js?v=1"></script>
   <script src="/static/backgrounds/ink.js?v=1"></script>
   <script src="/static/backgrounds/bloom.js?v=1"></script>
-  <script src="/static/app.js?v=120"></script>
+  <script src="/static/app.js?v=121"></script>
   <script src="/static/liquid-glass.js?v=29"></script>
 </body>
 </html>
